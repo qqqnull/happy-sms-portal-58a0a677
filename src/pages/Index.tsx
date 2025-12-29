@@ -586,7 +586,14 @@ const Index = () => {
                           onClick={() => handleCountrySelect(country)}
                           className="p-4 rounded-xl border border-border hover:border-secondary hover:shadow-lg transition-all cursor-pointer group bg-card"
                         >
-                          <div className="text-4xl mb-2">{country.flag || getCountryFlag(country.code)}</div>
+                          <img 
+                            src={`https://flagcdn.com/w160/${country.code.toLowerCase()}.png`} 
+                            alt={country.name}
+                            className="w-12 h-8 object-cover rounded mb-2"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                           <div className="font-medium text-foreground group-hover:text-secondary transition-colors truncate">
                             {lang === 'zh' ? country.name : country.name_en}
                           </div>
@@ -749,7 +756,11 @@ const Index = () => {
               {/* Selected Country Info */}
               <div className="bg-card rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-4">
-                  <span className="text-5xl">{selectedCountry.flag || getCountryFlag(selectedCountry.code)}</span>
+                  <img 
+                    src={`https://flagcdn.com/w160/${selectedCountry.code.toLowerCase()}.png`} 
+                    alt={selectedCountry.name}
+                    className="w-16 h-12 object-cover rounded shadow-sm"
+                  />
                   <div>
                     <h2 className="text-2xl font-bold text-foreground">
                       {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en}
@@ -812,7 +823,7 @@ const Index = () => {
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
                             )}
                             <div className="text-sm font-semibold text-accent mt-2">
-                              ${service.specificPrice?.toFixed(2) || '0.00'}
+                              ￥{service.specificPrice?.toFixed(2) || '0.00'}
                             </div>
                             
                             {/* Success rate badge */}
@@ -841,14 +852,19 @@ const Index = () => {
                   {selectedService && (
                     <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-secondary/10 to-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                       <div>
-                        <div className="text-xs sm:text-sm text-muted-foreground mb-1">
-                          {selectedCountry.flag} {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en} · {selectedService.name}
+                        <div className="text-xs sm:text-sm text-muted-foreground mb-1 flex items-center gap-2">
+                          <img 
+                            src={`https://flagcdn.com/w40/${selectedCountry.code.toLowerCase()}.png`} 
+                            alt={selectedCountry.name}
+                            className="w-5 h-4 object-cover rounded"
+                          />
+                          {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en} · {selectedService.name}
                         </div>
                         <div className="flex items-baseline gap-2">
                           <span className="text-muted-foreground text-sm">
                             {lang === 'zh' ? '总价：' : 'Total:'}
                           </span>
-                          <span className="text-2xl sm:text-3xl font-bold text-accent">${selectedPrice.toFixed(2)}</span>
+                          <span className="text-2xl sm:text-3xl font-bold text-accent">￥{selectedPrice.toFixed(2)}</span>
                         </div>
                       </div>
                       <Button
