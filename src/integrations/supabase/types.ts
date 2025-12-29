@@ -24,6 +24,7 @@ export type Database = {
           is_popular: boolean | null
           name: string
           name_en: string
+          online_count: number | null
           price: number
           region: string
           sort_order: number | null
@@ -37,6 +38,7 @@ export type Database = {
           is_popular?: boolean | null
           name: string
           name_en: string
+          online_count?: number | null
           price?: number
           region: string
           sort_order?: number | null
@@ -50,6 +52,7 @@ export type Database = {
           is_popular?: boolean | null
           name?: string
           name_en?: string
+          online_count?: number | null
           price?: number
           region?: string
           sort_order?: number | null
@@ -198,6 +201,7 @@ export type Database = {
           name_en: string | null
           price_modifier: number
           sort_order: number | null
+          success_rate: number | null
         }
         Insert: {
           created_at?: string
@@ -210,6 +214,7 @@ export type Database = {
           name_en?: string | null
           price_modifier?: number
           sort_order?: number | null
+          success_rate?: number | null
         }
         Update: {
           created_at?: string
@@ -222,6 +227,7 @@ export type Database = {
           name_en?: string | null
           price_modifier?: number
           sort_order?: number | null
+          success_rate?: number | null
         }
         Relationships: []
       }

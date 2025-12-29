@@ -48,6 +48,7 @@ interface Country {
   region: string;
   price: number;
   is_popular: boolean;
+  online_count?: number;
 }
 
 interface Service {
@@ -58,6 +59,7 @@ interface Service {
   description?: string;
   price_modifier: number;
   is_popular: boolean;
+  success_rate?: number;
 }
 
 interface CountryService {
@@ -84,6 +86,7 @@ const Index = () => {
   const [showInsufficientDialog, setShowInsufficientDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingServices, setLoadingServices] = useState(false);
+  const [refreshingNumbers, setRefreshingNumbers] = useState(false);
   
   const { user, profile } = useAuth();
   const { t, lang } = useLanguage();
@@ -104,16 +107,30 @@ const Index = () => {
       setCountries(countriesRes.data.map(c => ({
         ...c,
         price: Number(c.price),
-        flag: c.flag || getCountryFlag(c.code)
+        flag: c.flag || getCountryFlag(c.code),
+        online_count: c.online_count || 100
       })));
     }
     if (servicesRes.data) {
       setServices(servicesRes.data.map(s => ({
         ...s,
-        price_modifier: Number(s.price_modifier)
+        price_modifier: Number(s.price_modifier),
+        success_rate: s.success_rate || 95
       })));
     }
     setLoading(false);
+  };
+
+  const refreshOnlineNumbers = async () => {
+    setRefreshingNumbers(true);
+    const { data } = await supabase.from('countries').select('id, online_count').eq('is_active', true);
+    if (data) {
+      setCountries(prev => prev.map(country => {
+        const updated = data.find(c => c.id === country.id);
+        return updated ? { ...country, online_count: updated.online_count || 100 } : country;
+      }));
+    }
+    setRefreshingNumbers(false);
   };
 
   const fetchCountryServices = async (countryId: string) => {
@@ -528,7 +545,19 @@ const Index = () => {
                     <Globe className="h-5 w-5 text-secondary" />
                     <h2 className="font-semibold">{t('selectCountryTitle')}</h2>
                   </div>
-                  <span className="text-sm text-muted-foreground">{t('countryCount')}</span>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={refreshOnlineNumbers}
+                      disabled={refreshingNumbers}
+                      className="text-xs"
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1 ${refreshingNumbers ? 'animate-spin' : ''}`} />
+                      {refreshingNumbers ? t('refreshing') : t('refreshNumbers')}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">{t('countryCount')}</span>
+                  </div>
                 </div>
 
                 <div className="p-4">
@@ -562,8 +591,15 @@ const Index = () => {
                             {lang === 'zh' ? country.name : country.name_en}
                           </div>
                           <div className="text-sm text-muted-foreground">{country.code}</div>
+                          
+                          {/* Online count badge */}
+                          <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                            {t('onlineNumbers')}: {country.online_count || 100}
+                          </div>
+                          
                           {country.is_popular && (
-                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                            <span className="inline-flex items-center gap-1 mt-2 ml-1 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
                               <Star className="h-3 w-3" />
                               {t('popular')}
                             </span>
@@ -778,8 +814,14 @@ const Index = () => {
                             <div className="text-sm font-semibold text-accent mt-2">
                               ${service.specificPrice?.toFixed(2) || '0.00'}
                             </div>
+                            
+                            {/* Success rate badge */}
+                            <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                              {t('successRate')}: {service.success_rate || 95}%
+                            </div>
+                            
                             {service.is_popular && (
-                              <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              <span className="inline-flex items-center gap-1 mt-2 ml-1 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
                                 <Star className="h-3 w-3" />
                                 {t('popular')}
                               </span>

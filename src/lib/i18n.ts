@@ -143,6 +143,12 @@ export const translations = {
     noData: '暂无数据',
     noCountries: '未找到匹配的国家',
     noServices: '未找到匹配的服务',
+    
+    // Online count & success rate
+    onlineNumbers: '在线号码',
+    successRate: '成功率',
+    refreshing: '刷新中...',
+    refreshNumbers: '刷新号码',
   },
   en: {
     // Header
@@ -281,6 +287,12 @@ export const translations = {
     noData: 'No data',
     noCountries: 'No countries found',
     noServices: 'No services found',
+    
+    // Online count & success rate
+    onlineNumbers: 'Online',
+    successRate: 'Success',
+    refreshing: 'Refreshing...',
+    refreshNumbers: 'Refresh',
   },
 };
 
