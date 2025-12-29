@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, Globe, CheckCircle, Zap, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { 
+  Search, Globe, CheckCircle, Zap, ArrowLeft, 
+  Shield, ShieldCheck, Lock, Database, Headphones,
+  Smartphone, FileText, HelpCircle, BookOpen, 
+  UserPlus, MapPin, Phone, MessageSquare, LogIn,
+  Filter, ArrowUpDown, RefreshCw, Wifi
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,10 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import MainLayout from '@/components/layout/MainLayout';
+import AppHeader from '@/components/layout/AppHeader';
 
 interface Country {
   id: string;
@@ -36,6 +49,7 @@ interface Service {
 }
 
 type Region = 'all' | 'asia' | 'europe' | 'americas' | 'africa' | 'oceania';
+type SortType = 'popular' | 'name' | 'code';
 
 const Index = () => {
   const [countries, setCountries] = useState<Country[]>([]);
@@ -44,6 +58,7 @@ const Index = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<Region>('all');
+  const [sortType, setSortType] = useState<SortType>('popular');
   const [showInsufficientDialog, setShowInsufficientDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -77,29 +92,38 @@ const Index = () => {
     setLoading(false);
   };
 
-  const stats = [
-    { icon: Globe, label: t('globalCoverage'), color: 'text-secondary' },
-    { icon: CheckCircle, label: t('successRate'), color: 'text-success' },
-    { icon: Zap, label: t('instantRecharge'), color: 'text-accent' },
-  ];
-
   const regions: { key: Region; label: string }[] = [
-    { key: 'all', label: t('allRegions') },
-    { key: 'asia', label: t('asia') },
-    { key: 'europe', label: t('europe') },
-    { key: 'americas', label: t('americas') },
-    { key: 'africa', label: t('africa') },
-    { key: 'oceania', label: t('oceania') },
+    { key: 'all', label: '所有地区' },
+    { key: 'asia', label: '亚洲' },
+    { key: 'europe', label: '欧洲' },
+    { key: 'americas', label: '美洲' },
+    { key: 'africa', label: '非洲' },
+    { key: 'oceania', label: '大洋洲' },
   ];
 
-  const filteredCountries = countries.filter((country) => {
-    const matchesSearch = 
-      country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      country.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      country.code.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRegion = selectedRegion === 'all' || country.region === selectedRegion;
-    return matchesSearch && matchesRegion;
-  });
+  const filteredCountries = countries
+    .filter((country) => {
+      const matchesSearch = 
+        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        country.code.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRegion = selectedRegion === 'all' || country.region === selectedRegion;
+      return matchesSearch && matchesRegion;
+    })
+    .sort((a, b) => {
+      if (sortType === 'popular') {
+        if (a.is_popular && !b.is_popular) return -1;
+        if (!a.is_popular && b.is_popular) return 1;
+        return 0;
+      }
+      if (sortType === 'name') {
+        return lang === 'zh' ? a.name.localeCompare(b.name, 'zh') : a.name_en.localeCompare(b.name_en);
+      }
+      if (sortType === 'code') {
+        return a.code.localeCompare(b.code);
+      }
+      return 0;
+    });
 
   const handleCountrySelect = (country: Country) => {
     if (!user) {
@@ -137,194 +161,424 @@ const Index = () => {
     setSelectedService(null);
   };
 
+  const navItems = [
+    { icon: Smartphone, label: '获取接码号码', path: '/', active: true },
+    { icon: FileText, label: 'API接口服务', path: '/api-docs' },
+    { icon: Headphones, label: '客户支持中心', path: '/support' },
+    { icon: HelpCircle, label: '常见问题解答', path: '/faq' },
+    { icon: BookOpen, label: '使用教程', path: '/tutorial' },
+  ];
+
+  const securityBadges = [
+    { icon: Lock, label: 'SSL加密' },
+    { icon: ShieldCheck, label: '实名认证' },
+    { icon: Database, label: '资金存管' },
+    { icon: Shield, label: '数据加密' },
+  ];
+
+  const features = [
+    { icon: Shield, title: '安全可靠', desc: '一次性号码，保障隐私安全' },
+    { icon: Zap, title: '快速响应', desc: '验证码实时接收，无需等待' },
+    { icon: Globe, title: '全球覆盖', desc: '支持全球150+国家地区' },
+  ];
+
+  const steps = [
+    { icon: UserPlus, title: '注册登录', desc: '创建账户或登录系统' },
+    { icon: MapPin, title: '选择国家', desc: '选择国家和服务' },
+    { icon: Phone, title: '获取号码', desc: '系统分配接码号码' },
+    { icon: MessageSquare, title: '接收验证码', desc: '实时查看验证码' },
+  ];
+
   return (
-    <MainLayout>
-      <div className="p-6">
-        {/* Service Center Header */}
-        <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground">{t('serviceCenter')}</h1>
-              <span className="px-3 py-1 rounded-full bg-success/10 text-success text-sm font-medium flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse-glow"></span>
-                {t('systemNormal')}
-              </span>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <AppHeader />
+
+      {/* Main Content */}
+      <div className="flex">
+        {/* Left Sidebar */}
+        <aside className="w-[280px] min-h-[calc(100vh-56px)] p-4 space-y-4 hidden lg:block">
+          {/* Navigation */}
+          <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold">
+              服务导航
+            </div>
+            <nav className="p-2">
+              {navItems.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                    item.active 
+                      ? 'bg-secondary/10 text-secondary font-medium' 
+                      : 'hover:bg-muted text-foreground'
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Security Badges */}
+          <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              安全保障
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-3">
+              {securityBadges.map((badge, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <badge.icon className="h-4 w-4 text-success" />
+                  <span>{badge.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="flex gap-6 mt-4">
-            {stats.map((stat, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                <span className="text-sm text-muted-foreground">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Content */}
-        {!selectedCountry ? (
-          <>
-            {/* Search and Filters */}
-            <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
-                <div className="relative flex-1 max-w-md w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('searchCountry')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {regions.map((region) => (
-                    <Button
-                      key={region.key}
-                      variant={selectedRegion === region.key ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedRegion(region.key)}
-                      className={selectedRegion === region.key ? 'bg-secondary hover:bg-secondary/90' : ''}
-                    >
-                      {region.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          {/* Technical Support */}
+          <div className="bg-card rounded-xl shadow-sm p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/10 flex items-center justify-center">
+              <Headphones className="h-8 w-8 text-secondary" />
             </div>
-
-            {/* Countries Grid */}
-            <div className="bg-card rounded-lg shadow-sm p-6">
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>
-                  <p className="text-muted-foreground mt-4">加载中...</p>
-                </div>
-              ) : filteredCountries.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                  {filteredCountries.map((country) => (
-                    <div
-                      key={country.id}
-                      onClick={() => handleCountrySelect(country)}
-                      className="p-4 rounded-lg border border-border hover:border-secondary hover:shadow-md transition-all cursor-pointer group"
-                    >
-                      <div className="text-3xl mb-2">{country.flag}</div>
-                      <div className="font-medium text-foreground group-hover:text-secondary transition-colors">
-                        {lang === 'zh' ? country.name : country.name_en}
-                      </div>
-                      <div className="text-sm text-muted-foreground">+{country.code}</div>
-                      <div className="text-sm font-medium text-accent mt-1">
-                        ${country.price.toFixed(2)}
-                      </div>
-                      {country.is_popular && (
-                        <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                          {t('popular')}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">没有找到匹配的国家</p>
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Back Button */}
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              返回国家列表
+            <h3 className="font-semibold mb-1">专业技术支持</h3>
+            <p className="text-sm text-muted-foreground mb-4">7x24小时全天候服务响应</p>
+            <Button className="w-full bg-primary hover:bg-primary/90">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              咨询客服
             </Button>
+          </div>
+        </aside>
 
-            {/* Selected Country Info */}
-            <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
-              <div className="flex items-center gap-4">
-                <span className="text-4xl">{selectedCountry.flag}</span>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">
-                    {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en}
-                  </h2>
-                  <p className="text-muted-foreground">+{selectedCountry.code}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Services Grid */}
-            <div className="bg-card rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">{t('selectService')}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {services.map((service) => {
-                  const price = (selectedCountry.price * service.price_modifier).toFixed(2);
-                  const isSelected = selectedService?.id === service.id;
-                  
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => handleServiceSelect(service)}
-                      className={`p-4 rounded-lg border transition-all cursor-pointer ${
-                        isSelected 
-                          ? 'border-secondary bg-secondary/5 shadow-md' 
-                          : 'border-border hover:border-secondary hover:shadow-md'
-                      }`}
-                    >
-                      <div className="text-2xl mb-2">📱</div>
-                      <div className={`font-medium ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
-                        {service.name}
-                      </div>
-                      <div className="text-sm font-medium text-accent mt-1">
-                        ${price} <span className="text-muted-foreground font-normal">{t('pricePerSms')}</span>
-                      </div>
-                      {service.is_popular && (
-                        <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                          {t('popular')}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Get Number Button */}
-              {selectedService && (
-                <div className="mt-6 p-4 rounded-lg bg-muted/50 flex items-center justify-between">
-                  <div>
-                    <span className="text-muted-foreground">总价：</span>
-                    <span className="text-2xl font-bold text-accent">${calculatePrice()}</span>
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 space-y-4">
+          {!selectedCountry ? (
+            <>
+              {/* Service Center Header */}
+              <div className="bg-primary text-primary-foreground rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Wifi className="h-6 w-6" />
+                    <h1 className="text-xl font-bold">接码服务中心</h1>
                   </div>
-                  <Button
-                    size="lg"
-                    className="bg-secondary hover:bg-secondary/90"
-                    onClick={handleGetNumber}
-                  >
-                    {t('getNumberBtn')}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/20 text-success text-sm">
+                      <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                      系统状态正常
+                    </span>
+                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-sm">
+                      <RefreshCw className="h-3 w-3" />
+                      实时更新
+                    </span>
+                  </div>
                 </div>
-              )}
-            </div>
-          </>
-        )}
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
+                    <Globe className="h-10 w-10 opacity-80" />
+                    <div>
+                      <div className="font-semibold">全球覆盖</div>
+                      <div className="text-sm opacity-80">支持150+国家和地区</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
+                    <CheckCircle className="h-10 w-10 opacity-80" />
+                    <div>
+                      <div className="font-semibold">高接收率</div>
+                      <div className="text-sm opacity-80">成功率达99.9%</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
+                    <Zap className="h-10 w-10 opacity-80" />
+                    <div>
+                      <div className="font-semibold">即时到账</div>
+                      <div className="text-sm opacity-80">充值秒到，即刻使用</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="bg-card rounded-xl shadow-sm p-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Region Tabs */}
+                  <div className="flex gap-1 bg-muted rounded-lg p-1">
+                    {regions.map((region) => (
+                      <button
+                        key={region.key}
+                        onClick={() => setSelectedRegion(region.key)}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          selectedRegion === region.key
+                            ? 'bg-secondary text-secondary-foreground'
+                            : 'hover:bg-muted-foreground/10 text-muted-foreground'
+                        }`}
+                      >
+                        {region.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex-1" />
+
+                  {/* Search Input */}
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="搜索国家/地区..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  {/* Region Select */}
+                  <Select value={selectedRegion} onValueChange={(v) => setSelectedRegion(v as Region)}>
+                    <SelectTrigger className="w-32">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regions.map((region) => (
+                        <SelectItem key={region.key} value={region.key}>
+                          {region.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Sort Select */}
+                  <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
+                    <SelectTrigger className="w-36">
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popular">按热门排序</SelectItem>
+                      <SelectItem value="name">按名称排序</SelectItem>
+                      <SelectItem value="code">按国家代码排序</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Countries Section */}
+              <div className="bg-card rounded-xl shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-secondary" />
+                    <h2 className="font-semibold">选择国家/地区</h2>
+                  </div>
+                  <span className="text-sm text-muted-foreground">支持 {countries.length}+ 国家和地区</span>
+                </div>
+
+                <div className="p-4">
+                  {loading ? (
+                    <div className="text-center py-16">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>
+                      <p className="text-muted-foreground mt-4">正在加载国家数据...</p>
+                    </div>
+                  ) : !user ? (
+                    <div className="text-center py-16">
+                      <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">请登录后查看所有可用国家和地区</p>
+                      <Button 
+                        className="bg-primary hover:bg-primary/90"
+                        onClick={() => navigate('/login')}
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        立即登录
+                      </Button>
+                    </div>
+                  ) : filteredCountries.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                      {filteredCountries.map((country) => (
+                        <div
+                          key={country.id}
+                          onClick={() => handleCountrySelect(country)}
+                          className="p-4 rounded-xl border border-border hover:border-secondary hover:shadow-lg transition-all cursor-pointer group bg-card"
+                        >
+                          <div className="text-3xl mb-2">{country.flag}</div>
+                          <div className="font-medium text-foreground group-hover:text-secondary transition-colors truncate">
+                            {lang === 'zh' ? country.name : country.name_en}
+                          </div>
+                          <div className="text-sm text-muted-foreground">+{country.code}</div>
+                          <div className="text-sm font-semibold text-accent mt-1">
+                            ${country.price.toFixed(2)}
+                          </div>
+                          {country.is_popular && (
+                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              热门
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">没有找到匹配的国家</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Services Preview */}
+              <div className="bg-card rounded-xl shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-5 w-5 text-secondary" />
+                    <h2 className="font-semibold">选择服务</h2>
+                  </div>
+                  <span className="text-sm text-muted-foreground">支持 {services.length}+ 主流应用服务</span>
+                </div>
+
+                <div className="p-6 text-center">
+                  <div className="inline-flex items-center gap-3 px-6 py-4 rounded-xl bg-secondary/10 text-secondary">
+                    <Phone className="h-8 w-8" />
+                    <div className="text-left">
+                      <div className="font-semibold text-lg">获取号码</div>
+                      <div className="text-sm opacity-80">点击获取号码按钮后，系统将为您分配一个临时手机号码用于接收验证码</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="grid grid-cols-3 gap-4">
+                {features.map((feature, index) => (
+                  <div key={index} className="bg-card rounded-xl shadow-sm p-5 flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                      <feature.icon className="h-6 w-6 text-secondary" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-secondary">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Usage Steps */}
+              <div className="bg-primary text-primary-foreground rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  <h2 className="font-semibold">使用流程</h2>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-4 gap-6">
+                    {steps.map((step, index) => (
+                      <div key={index} className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/10 flex items-center justify-center">
+                          <step.icon className="h-8 w-8" />
+                        </div>
+                        <h4 className="font-semibold mb-1">{step.title}</h4>
+                        <p className="text-sm opacity-80">{step.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Back Button */}
+              <Button
+                variant="ghost"
+                onClick={handleBack}
+                className="mb-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                返回国家列表
+              </Button>
+
+              {/* Selected Country Info */}
+              <div className="bg-card rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-5xl">{selectedCountry.flag}</span>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en}
+                    </h2>
+                    <p className="text-muted-foreground">+{selectedCountry.code}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Services Grid */}
+              <div className="bg-card rounded-xl shadow-sm">
+                <div className="px-4 py-3 border-b border-border">
+                  <h3 className="font-semibold">选择服务</h3>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    {services.map((service) => {
+                      const price = (selectedCountry.price * service.price_modifier).toFixed(2);
+                      const isSelected = selectedService?.id === service.id;
+                      
+                      return (
+                        <div
+                          key={service.id}
+                          onClick={() => handleServiceSelect(service)}
+                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                            isSelected 
+                              ? 'border-secondary bg-secondary/5 shadow-lg' 
+                              : 'border-border hover:border-secondary hover:shadow-md'
+                          }`}
+                        >
+                          <div className="text-2xl mb-2">📱</div>
+                          <div className={`font-medium truncate ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
+                            {service.name}
+                          </div>
+                          <div className="text-sm font-semibold text-accent mt-1">
+                            ${price}
+                          </div>
+                          {service.is_popular && (
+                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              热门
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Get Number Button */}
+                  {selectedService && (
+                    <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
+                      <div>
+                        <span className="text-muted-foreground">总价：</span>
+                        <span className="text-3xl font-bold text-accent">${calculatePrice()}</span>
+                      </div>
+                      <Button
+                        size="lg"
+                        className="bg-secondary hover:bg-secondary/90 text-lg px-8"
+                        onClick={handleGetNumber}
+                      >
+                        获取号码
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </main>
       </div>
 
       {/* Insufficient Balance Dialog */}
       <Dialog open={showInsufficientDialog} onOpenChange={setShowInsufficientDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('insufficientBalance')}</DialogTitle>
+            <DialogTitle>余额不足</DialogTitle>
             <DialogDescription>
-              {t('pleaseRecharge')}
+              请先充值后再获取号码
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInsufficientDialog(false)}>
-              {t('cancel')}
+              取消
             </Button>
             <Button 
               className="bg-accent hover:bg-accent/90"
@@ -333,12 +587,12 @@ const Index = () => {
                 navigate('/recharge');
               }}
             >
-              {t('goRecharge')}
+              去充值
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </div>
   );
 };
 
