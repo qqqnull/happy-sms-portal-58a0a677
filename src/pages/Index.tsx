@@ -5,7 +5,7 @@ import {
   Shield, ShieldCheck, Lock, Database, Headphones,
   Smartphone, FileText, HelpCircle, BookOpen, 
   UserPlus, MapPin, Phone, MessageSquare, LogIn,
-  Filter, ArrowUpDown, RefreshCw, Wifi
+  Filter, ArrowUpDown, RefreshCw, Wifi, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import AppHeader from '@/components/layout/AppHeader';
+import { getServiceIcon } from '@/lib/serviceIcons';
 
 interface Country {
   id: string;
@@ -442,39 +443,14 @@ const Index = () => {
                       {[...services, ...services].map((service, index) => (
                         <div
                           key={`row1-${index}`}
-                          className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary transition-all"
+                          onClick={() => !user && navigate('/login')}
+                          className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary hover:shadow-md transition-all cursor-pointer"
                         >
-                          <div className="text-2xl mb-1">
-                            {service.icon === 'whatsapp' && '💬'}
-                            {service.icon === 'telegram' && '✈️'}
-                            {service.icon === 'google' && '🔍'}
-                            {service.icon === 'facebook' && '👤'}
-                            {service.icon === 'twitter' && '🐦'}
-                            {service.icon === 'instagram' && '📷'}
-                            {service.icon === 'tiktok' && '🎵'}
-                            {service.icon === 'wechat' && '💚'}
-                            {service.icon === 'alipay' && '💰'}
-                            {service.icon === 'discord' && '🎮'}
-                            {service.icon === 'snapchat' && '👻'}
-                            {service.icon === 'linkedin' && '💼'}
-                            {service.icon === 'microsoft' && '🪟'}
-                            {service.icon === 'apple' && '🍎'}
-                            {service.icon === 'amazon' && '📦'}
-                            {service.icon === 'netflix' && '🎬'}
-                            {service.icon === 'uber' && '🚗'}
-                            {service.icon === 'paypal' && '💳'}
-                            {service.icon === 'binance' && '🪙'}
-                            {service.icon === 'okx' && '📊'}
-                            {service.icon === 'coinbase' && '💎'}
-                            {service.icon === 'steam' && '🎮'}
-                            {service.icon === 'line' && '💬'}
-                            {service.icon === 'viber' && '📞'}
-                            {service.icon === 'tinder' && '❤️'}
-                            {!['whatsapp', 'telegram', 'google', 'facebook', 'twitter', 'instagram', 'tiktok', 'wechat', 'alipay', 'discord', 'snapchat', 'linkedin', 'microsoft', 'apple', 'amazon', 'netflix', 'uber', 'paypal', 'binance', 'okx', 'coinbase', 'steam', 'line', 'viber', 'tinder'].includes(service.icon || '') && '📱'}
-                          </div>
+                          <div className="text-2xl mb-1">{getServiceIcon(service.icon)}</div>
                           <div className="font-medium text-sm truncate text-foreground">{service.name}</div>
                           {service.is_popular && (
-                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                            <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              <Star className="h-3 w-3" />
                               热门
                             </span>
                           )}
@@ -487,39 +463,14 @@ const Index = () => {
                       {[...services.slice().reverse(), ...services.slice().reverse()].map((service, index) => (
                         <div
                           key={`row2-${index}`}
-                          className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary transition-all"
+                          onClick={() => !user && navigate('/login')}
+                          className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary hover:shadow-md transition-all cursor-pointer"
                         >
-                          <div className="text-2xl mb-1">
-                            {service.icon === 'whatsapp' && '💬'}
-                            {service.icon === 'telegram' && '✈️'}
-                            {service.icon === 'google' && '🔍'}
-                            {service.icon === 'facebook' && '👤'}
-                            {service.icon === 'twitter' && '🐦'}
-                            {service.icon === 'instagram' && '📷'}
-                            {service.icon === 'tiktok' && '🎵'}
-                            {service.icon === 'wechat' && '💚'}
-                            {service.icon === 'alipay' && '💰'}
-                            {service.icon === 'discord' && '🎮'}
-                            {service.icon === 'snapchat' && '👻'}
-                            {service.icon === 'linkedin' && '💼'}
-                            {service.icon === 'microsoft' && '🪟'}
-                            {service.icon === 'apple' && '🍎'}
-                            {service.icon === 'amazon' && '📦'}
-                            {service.icon === 'netflix' && '🎬'}
-                            {service.icon === 'uber' && '🚗'}
-                            {service.icon === 'paypal' && '💳'}
-                            {service.icon === 'binance' && '🪙'}
-                            {service.icon === 'okx' && '📊'}
-                            {service.icon === 'coinbase' && '💎'}
-                            {service.icon === 'steam' && '🎮'}
-                            {service.icon === 'line' && '💬'}
-                            {service.icon === 'viber' && '📞'}
-                            {service.icon === 'tinder' && '❤️'}
-                            {!['whatsapp', 'telegram', 'google', 'facebook', 'twitter', 'instagram', 'tiktok', 'wechat', 'alipay', 'discord', 'snapchat', 'linkedin', 'microsoft', 'apple', 'amazon', 'netflix', 'uber', 'paypal', 'binance', 'okx', 'coinbase', 'steam', 'line', 'viber', 'tinder'].includes(service.icon || '') && '📱'}
-                          </div>
+                          <div className="text-2xl mb-1">{getServiceIcon(service.icon)}</div>
                           <div className="font-medium text-sm truncate text-foreground">{service.name}</div>
                           {service.is_popular && (
-                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                            <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              <Star className="h-3 w-3" />
                               热门
                             </span>
                           )}
@@ -613,10 +564,25 @@ const Index = () => {
 
               {/* Services Grid */}
               <div className="bg-card rounded-xl shadow-sm">
-                <div className="px-4 py-3 border-b border-border">
-                  <h3 className="font-semibold">选择服务</h3>
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-5 w-5 text-secondary" />
+                    <h3 className="font-semibold">选择服务</h3>
+                  </div>
+                  <span className="text-sm text-muted-foreground">可用服务 {services.length} 项</span>
                 </div>
                 <div className="p-4">
+                  {/* Search for services */}
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="搜索服务..."
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {services.map((service) => {
                       const price = (selectedCountry.price * service.price_modifier).toFixed(2);
@@ -628,11 +594,11 @@ const Index = () => {
                           onClick={() => handleServiceSelect(service)}
                           className={`p-4 rounded-xl border transition-all cursor-pointer ${
                             isSelected 
-                              ? 'border-secondary bg-secondary/5 shadow-lg' 
+                              ? 'border-secondary bg-secondary/5 shadow-lg ring-2 ring-secondary/20' 
                               : 'border-border hover:border-secondary hover:shadow-md'
                           }`}
                         >
-                          <div className="text-2xl mb-2">📱</div>
+                          <div className="text-2xl mb-2">{getServiceIcon(service.icon)}</div>
                           <div className={`font-medium truncate ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
                             {service.name}
                           </div>
@@ -640,7 +606,8 @@ const Index = () => {
                             ${price}
                           </div>
                           {service.is_popular && (
-                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              <Star className="h-3 w-3" />
                               热门
                             </span>
                           )}
@@ -651,16 +618,22 @@ const Index = () => {
 
                   {/* Get Number Button */}
                   {selectedService && (
-                    <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
+                    <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-secondary/10 to-accent/10 flex items-center justify-between">
                       <div>
-                        <span className="text-muted-foreground">总价：</span>
-                        <span className="text-3xl font-bold text-accent">${calculatePrice()}</span>
+                        <div className="text-sm text-muted-foreground mb-1">
+                          {selectedCountry.flag} {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en} · {selectedService.name}
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-muted-foreground">总价：</span>
+                          <span className="text-3xl font-bold text-accent">${calculatePrice()}</span>
+                        </div>
                       </div>
                       <Button
                         size="lg"
-                        className="bg-secondary hover:bg-secondary/90 text-lg px-8"
+                        className="bg-secondary hover:bg-secondary/90 text-lg px-8 shadow-lg"
                         onClick={handleGetNumber}
                       >
+                        <Phone className="h-5 w-5 mr-2" />
                         获取号码
                       </Button>
                     </div>
