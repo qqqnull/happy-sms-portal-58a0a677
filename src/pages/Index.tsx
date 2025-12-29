@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AppHeader from '@/components/layout/AppHeader';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { getServiceIcon } from '@/lib/serviceIcons';
+import { getCountryFlag, getServiceFirstCharIcon } from '@/lib/countryData';
 
 interface Country {
   id: string;
@@ -52,9 +53,18 @@ interface Country {
 interface Service {
   id: string;
   name: string;
+  name_en?: string;
   icon: string;
+  description?: string;
   price_modifier: number;
   is_popular: boolean;
+}
+
+interface CountryService {
+  id: string;
+  service_id: string;
+  price: number;
+  service: Service;
 }
 
 type Region = 'all' | 'asia' | 'europe' | 'americas' | 'africa' | 'oceania';
@@ -63,13 +73,17 @@ type SortType = 'popular' | 'name' | 'code';
 const Index = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [countryServices, setCountryServices] = useState<CountryService[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<Region>('all');
   const [sortType, setSortType] = useState<SortType>('popular');
   const [showInsufficientDialog, setShowInsufficientDialog] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(false);
   
   const { user, profile } = useAuth();
   const { t, lang } = useLanguage();
@@ -89,7 +103,8 @@ const Index = () => {
     if (countriesRes.data) {
       setCountries(countriesRes.data.map(c => ({
         ...c,
-        price: Number(c.price)
+        price: Number(c.price),
+        flag: c.flag || getCountryFlag(c.code)
       })));
     }
     if (servicesRes.data) {
@@ -99,6 +114,36 @@ const Index = () => {
       })));
     }
     setLoading(false);
+  };
+
+  const fetchCountryServices = async (countryId: string) => {
+    setLoadingServices(true);
+    const { data } = await supabase
+      .from('country_services')
+      .select(`
+        id,
+        service_id,
+        price,
+        service:services(*)
+      `)
+      .eq('country_id', countryId)
+      .eq('is_active', true);
+
+    if (data) {
+      setCountryServices(data.map((cs: any) => ({
+        id: cs.id,
+        service_id: cs.service_id,
+        price: Number(cs.price),
+        service: {
+          ...cs.service,
+          price_modifier: Number(cs.service.price_modifier)
+        }
+      })));
+    } else {
+      // If no country-specific services, use all services with default pricing
+      setCountryServices([]);
+    }
+    setLoadingServices(false);
   };
 
   const regions: { key: Region; labelZh: string; labelEn: string }[] = [
@@ -138,6 +183,24 @@ const Index = () => {
       return 0;
     });
 
+  // Get services to display - either country-specific or all services
+  const displayServices = countryServices.length > 0 
+    ? countryServices.map(cs => ({
+        ...cs.service,
+        specificPrice: cs.price
+      }))
+    : services.map(s => ({
+        ...s,
+        specificPrice: selectedCountry ? selectedCountry.price * s.price_modifier : 0
+      }));
+
+  const filteredServices = displayServices.filter(service => {
+    const searchLower = serviceSearchQuery.toLowerCase();
+    return service.name.toLowerCase().includes(searchLower) ||
+           (service.name_en && service.name_en.toLowerCase().includes(searchLower)) ||
+           (service.description && service.description.toLowerCase().includes(searchLower));
+  });
+
   const handleCountrySelect = (country: Country) => {
     if (!user) {
       navigate('/login');
@@ -145,33 +208,32 @@ const Index = () => {
     }
     setSelectedCountry(country);
     setSelectedService(null);
+    setServiceSearchQuery('');
+    fetchCountryServices(country.id);
   };
 
-  const handleServiceSelect = (service: Service) => {
+  const handleServiceSelect = (service: Service & { specificPrice?: number }) => {
     setSelectedService(service);
-  };
-
-  const calculatePrice = () => {
-    if (!selectedCountry || !selectedService) return 0;
-    return Number((selectedCountry.price * selectedService.price_modifier).toFixed(2));
+    setSelectedPrice(service.specificPrice || 0);
   };
 
   const handleGetNumber = () => {
     if (!profile) return;
     
-    const price = calculatePrice();
-    if (profile.balance < price) {
+    if (profile.balance < selectedPrice) {
       setShowInsufficientDialog(true);
       return;
     }
     
     // TODO: Implement number acquisition
-    console.log('Get number for', selectedCountry, selectedService);
+    console.log('Get number for', selectedCountry, selectedService, 'Price:', selectedPrice);
   };
 
   const handleBack = () => {
     setSelectedCountry(null);
     setSelectedService(null);
+    setCountryServices([]);
+    setServiceSearchQuery('');
   };
 
   const navItems = [
@@ -262,6 +324,22 @@ const Index = () => {
     </div>
   );
 
+  // Service icon component - uses first character
+  const ServiceIcon = ({ name, icon }: { name: string; icon?: string }) => {
+    // Try to use the icon from serviceIcons first
+    const existingIcon = icon ? getServiceIcon(icon) : null;
+    if (existingIcon && existingIcon !== '📱') {
+      return <span className="text-2xl">{existingIcon}</span>;
+    }
+    // Fallback to first character
+    const firstChar = getServiceFirstCharIcon(name);
+    return (
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary/20 to-accent/20 flex items-center justify-center text-secondary font-bold text-lg">
+        {firstChar}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -344,7 +422,6 @@ const Index = () => {
               <div className="bg-card rounded-xl shadow-sm p-3 sm:p-4">
                 {/* Mobile: Stacked layout */}
                 <div className="flex flex-col gap-3 sm:hidden">
-                  {/* Search Input - Full width on mobile */}
                   <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -355,7 +432,6 @@ const Index = () => {
                     />
                   </div>
                   
-                  {/* Region Tabs - Scrollable on mobile */}
                   <div className="overflow-x-auto -mx-3 px-3">
                     <div className="flex gap-1 bg-muted rounded-lg p-1 w-max">
                       {regions.map((region) => (
@@ -374,7 +450,6 @@ const Index = () => {
                     </div>
                   </div>
 
-                  {/* Sort Select */}
                   <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
                     <SelectTrigger className="w-full">
                       <ArrowUpDown className="h-4 w-4 mr-2" />
@@ -390,7 +465,6 @@ const Index = () => {
 
                 {/* Desktop: Horizontal layout */}
                 <div className="hidden sm:flex flex-wrap items-center gap-4">
-                  {/* Region Tabs */}
                   <div className="flex gap-1 bg-muted rounded-lg p-1">
                     {regions.map((region) => (
                       <button
@@ -409,7 +483,6 @@ const Index = () => {
 
                   <div className="flex-1" />
 
-                  {/* Search Input */}
                   <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -420,7 +493,6 @@ const Index = () => {
                     />
                   </div>
 
-                  {/* Region Select */}
                   <Select value={selectedRegion} onValueChange={(v) => setSelectedRegion(v as Region)}>
                     <SelectTrigger className="w-32">
                       <Filter className="h-4 w-4 mr-2" />
@@ -435,7 +507,6 @@ const Index = () => {
                     </SelectContent>
                   </Select>
 
-                  {/* Sort Select */}
                   <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
                     <SelectTrigger className="w-36">
                       <ArrowUpDown className="h-4 w-4 mr-2" />
@@ -486,16 +557,14 @@ const Index = () => {
                           onClick={() => handleCountrySelect(country)}
                           className="p-4 rounded-xl border border-border hover:border-secondary hover:shadow-lg transition-all cursor-pointer group bg-card"
                         >
-                          <div className="text-3xl mb-2">{country.flag}</div>
+                          <div className="text-4xl mb-2">{country.flag || getCountryFlag(country.code)}</div>
                           <div className="font-medium text-foreground group-hover:text-secondary transition-colors truncate">
                             {lang === 'zh' ? country.name : country.name_en}
                           </div>
-                          <div className="text-sm text-muted-foreground">+{country.code}</div>
-                          <div className="text-sm font-semibold text-accent mt-1">
-                            ${country.price.toFixed(2)}
-                          </div>
+                          <div className="text-sm text-muted-foreground">{country.code}</div>
                           {country.is_popular && (
-                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              <Star className="h-3 w-3" />
                               {t('popular')}
                             </span>
                           )}
@@ -522,9 +591,7 @@ const Index = () => {
                 </div>
 
                 <div className="p-4">
-                  {/* Scrolling Services Showcase */}
                   <div className="relative overflow-hidden">
-                    {/* First row - scrolling left */}
                     <div className="flex gap-3 animate-scroll-left mb-3">
                       {[...services, ...services].map((service, index) => (
                         <div
@@ -532,8 +599,8 @@ const Index = () => {
                           onClick={() => !user && navigate('/login')}
                           className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary hover:shadow-md transition-all cursor-pointer"
                         >
-                          <div className="text-2xl mb-1">{getServiceIcon(service.icon)}</div>
-                          <div className="font-medium text-sm truncate text-foreground">{service.name}</div>
+                          <ServiceIcon name={service.name} icon={service.icon} />
+                          <div className="font-medium text-sm truncate text-foreground mt-2">{service.name}</div>
                           {service.is_popular && (
                             <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
                               <Star className="h-3 w-3" />
@@ -544,7 +611,6 @@ const Index = () => {
                       ))}
                     </div>
                     
-                    {/* Second row - scrolling right */}
                     <div className="flex gap-3 animate-scroll-right">
                       {[...services.slice().reverse(), ...services.slice().reverse()].map((service, index) => (
                         <div
@@ -552,8 +618,8 @@ const Index = () => {
                           onClick={() => !user && navigate('/login')}
                           className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary hover:shadow-md transition-all cursor-pointer"
                         >
-                          <div className="text-2xl mb-1">{getServiceIcon(service.icon)}</div>
-                          <div className="font-medium text-sm truncate text-foreground">{service.name}</div>
+                          <ServiceIcon name={service.name} icon={service.icon} />
+                          <div className="font-medium text-sm truncate text-foreground mt-2">{service.name}</div>
                           {service.is_popular && (
                             <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
                               <Star className="h-3 w-3" />
@@ -564,12 +630,10 @@ const Index = () => {
                       ))}
                     </div>
 
-                    {/* Gradient overlays */}
                     <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-card to-transparent pointer-events-none z-10"></div>
                     <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-card to-transparent pointer-events-none z-10"></div>
                   </div>
 
-                  {/* Info banner */}
                   <div className="mt-4 p-4 rounded-xl bg-secondary/10 text-center">
                     <p className="text-muted-foreground">
                       {lang === 'zh' 
@@ -649,12 +713,12 @@ const Index = () => {
               {/* Selected Country Info */}
               <div className="bg-card rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-4">
-                  <span className="text-5xl">{selectedCountry.flag}</span>
+                  <span className="text-5xl">{selectedCountry.flag || getCountryFlag(selectedCountry.code)}</span>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground">
                       {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en}
                     </h2>
-                    <p className="text-muted-foreground">+{selectedCountry.code}</p>
+                    <p className="text-muted-foreground">{selectedCountry.code}</p>
                   </div>
                 </div>
               </div>
@@ -667,7 +731,7 @@ const Index = () => {
                     <h3 className="font-semibold">{t('selectServiceTitle')}</h3>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {lang === 'zh' ? `可用服务 ${services.length} 项` : `${services.length} services available`}
+                    {lang === 'zh' ? `可用服务 ${filteredServices.length} 项` : `${filteredServices.length} services`}
                   </span>
                 </div>
                 <div className="p-4">
@@ -677,43 +741,59 @@ const Index = () => {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder={t('searchService')}
+                        value={serviceSearchQuery}
+                        onChange={(e) => setServiceSearchQuery(e.target.value)}
                         className="pl-10"
                       />
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                    {services.map((service) => {
-                      const price = (selectedCountry.price * service.price_modifier).toFixed(2);
-                      const isSelected = selectedService?.id === service.id;
-                      
-                      return (
-                        <div
-                          key={service.id}
-                          onClick={() => handleServiceSelect(service)}
-                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                            isSelected 
-                              ? 'border-secondary bg-secondary/5 shadow-lg ring-2 ring-secondary/20' 
-                              : 'border-border hover:border-secondary hover:shadow-md'
-                          }`}
-                        >
-                          <div className="text-2xl mb-2">{getServiceIcon(service.icon)}</div>
-                          <div className={`font-medium truncate ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
-                            {service.name}
+                  {loadingServices ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-secondary mx-auto"></div>
+                      <p className="text-muted-foreground mt-3">{t('loading')}</p>
+                    </div>
+                  ) : filteredServices.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                      {filteredServices.map((service: any) => {
+                        const isSelected = selectedService?.id === service.id;
+                        
+                        return (
+                          <div
+                            key={service.id}
+                            onClick={() => handleServiceSelect(service)}
+                            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                              isSelected 
+                                ? 'border-secondary bg-secondary/5 shadow-lg ring-2 ring-secondary/20' 
+                                : 'border-border hover:border-secondary hover:shadow-md'
+                            }`}
+                          >
+                            <ServiceIcon name={service.name} icon={service.icon} />
+                            <div className={`font-medium truncate mt-2 ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
+                              {service.name}
+                            </div>
+                            {service.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
+                            )}
+                            <div className="text-sm font-semibold text-accent mt-2">
+                              ${service.specificPrice?.toFixed(2) || '0.00'}
+                            </div>
+                            {service.is_popular && (
+                              <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                                <Star className="h-3 w-3" />
+                                {t('popular')}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm font-semibold text-accent mt-1">
-                            ${price}
-                          </div>
-                          {service.is_popular && (
-                            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                              <Star className="h-3 w-3" />
-                              {t('popular')}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Smartphone className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground">{t('noServices')}</p>
+                    </div>
+                  )}
 
                   {/* Get Number Button */}
                   {selectedService && (
@@ -726,7 +806,7 @@ const Index = () => {
                           <span className="text-muted-foreground text-sm">
                             {lang === 'zh' ? '总价：' : 'Total:'}
                           </span>
-                          <span className="text-2xl sm:text-3xl font-bold text-accent">${calculatePrice()}</span>
+                          <span className="text-2xl sm:text-3xl font-bold text-accent">${selectedPrice.toFixed(2)}</span>
                         </div>
                       </div>
                       <Button

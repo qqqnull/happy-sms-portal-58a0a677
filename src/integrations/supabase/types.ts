@@ -56,6 +56,48 @@ export type Database = {
         }
         Relationships: []
       }
+      country_services: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          price: number
+          service_id: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          price?: number
+          service_id: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          price?: number
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "country_services_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "country_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           completed_at: string | null
@@ -147,31 +189,37 @@ export type Database = {
       services: {
         Row: {
           created_at: string
+          description: string | null
           icon: string | null
           id: string
           is_active: boolean | null
           is_popular: boolean | null
           name: string
+          name_en: string | null
           price_modifier: number
           sort_order: number | null
         }
         Insert: {
           created_at?: string
+          description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
           is_popular?: boolean | null
           name: string
+          name_en?: string | null
           price_modifier?: number
           sort_order?: number | null
         }
         Update: {
           created_at?: string
+          description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
           is_popular?: boolean | null
           name?: string
+          name_en?: string | null
           price_modifier?: number
           sort_order?: number | null
         }
