@@ -5,7 +5,7 @@ import {
   Shield, ShieldCheck, Lock, Database, Headphones,
   Smartphone, FileText, HelpCircle, BookOpen, 
   UserPlus, MapPin, Phone, MessageSquare, LogIn,
-  Filter, ArrowUpDown, RefreshCw, Wifi, Star
+  Filter, ArrowUpDown, RefreshCw, Wifi, Star, Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -190,120 +197,191 @@ const Index = () => {
     { icon: MessageSquare, title: '接收验证码', desc: '实时查看验证码' },
   ];
 
+  // Sidebar content component for reuse
+  const SidebarContent = () => (
+    <div className="space-y-4">
+      {/* Navigation */}
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold">
+          服务导航
+        </div>
+        <nav className="p-2">
+          {navItems.map((item, index) => (
+            <Link
+              key={index}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                item.active 
+                  ? 'bg-secondary/10 text-secondary font-medium' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      {/* Security Badges */}
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          安全保障
+        </div>
+        <div className="p-4 grid grid-cols-2 gap-3">
+          {securityBadges.map((badge, index) => (
+            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+              <badge.icon className="h-4 w-4 text-success" />
+              <span>{badge.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Technical Support */}
+      <div className="bg-card rounded-xl shadow-sm p-6 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/10 flex items-center justify-center">
+          <Headphones className="h-8 w-8 text-secondary" />
+        </div>
+        <h3 className="font-semibold mb-1">专业技术支持</h3>
+        <p className="text-sm text-muted-foreground mb-4">7x24小时全天候服务响应</p>
+        <Button className="w-full bg-primary hover:bg-primary/90">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          咨询客服
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <AppHeader />
 
+      {/* Mobile Menu Button - Fixed at bottom */}
+      <div className="fixed bottom-4 left-4 z-50 lg:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button size="lg" className="rounded-full shadow-lg bg-primary hover:bg-primary/90 h-14 w-14">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[300px] p-4 overflow-y-auto">
+            <SheetHeader className="mb-4">
+              <SheetTitle>服务导航</SheetTitle>
+            </SheetHeader>
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </div>
+
       {/* Main Content */}
       <div className="flex">
-        {/* Left Sidebar */}
-        <aside className="w-[280px] min-h-[calc(100vh-56px)] p-4 space-y-4 hidden lg:block">
-          {/* Navigation */}
-          <div className="bg-card rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold">
-              服务导航
-            </div>
-            <nav className="p-2">
-              {navItems.map((item, index) => (
-                <Link
-                  key={index}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    item.active 
-                      ? 'bg-secondary/10 text-secondary font-medium' 
-                      : 'hover:bg-muted text-foreground'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          {/* Security Badges */}
-          <div className="bg-card rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              安全保障
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-3">
-              {securityBadges.map((badge, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <badge.icon className="h-4 w-4 text-success" />
-                  <span>{badge.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Technical Support */}
-          <div className="bg-card rounded-xl shadow-sm p-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/10 flex items-center justify-center">
-              <Headphones className="h-8 w-8 text-secondary" />
-            </div>
-            <h3 className="font-semibold mb-1">专业技术支持</h3>
-            <p className="text-sm text-muted-foreground mb-4">7x24小时全天候服务响应</p>
-            <Button className="w-full bg-primary hover:bg-primary/90">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              咨询客服
-            </Button>
-          </div>
+        {/* Left Sidebar - Desktop only */}
+        <aside className="w-[280px] min-h-[calc(100vh-56px)] p-4 hidden lg:block">
+          <SidebarContent />
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 space-y-4">
+        <main className="flex-1 p-3 sm:p-4 space-y-3 sm:space-y-4 pb-24 lg:pb-4">
           {!selectedCountry ? (
             <>
               {/* Service Center Header */}
-              <div className="bg-primary text-primary-foreground rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Wifi className="h-6 w-6" />
-                    <h1 className="text-xl font-bold">接码服务中心</h1>
+              <div className="bg-primary text-primary-foreground rounded-xl p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Wifi className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <h1 className="text-lg sm:text-xl font-bold">接码服务中心</h1>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/20 text-success text-sm">
-                      <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                      系统状态正常
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-success/20 text-success text-xs sm:text-sm">
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-success animate-pulse"></span>
+                      系统正常
                     </span>
-                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-sm">
+                    <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-white/10 text-xs sm:text-sm">
                       <RefreshCw className="h-3 w-3" />
                       实时更新
                     </span>
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
-                    <Globe className="h-10 w-10 opacity-80" />
-                    <div>
-                      <div className="font-semibold">全球覆盖</div>
-                      <div className="text-sm opacity-80">支持150+国家和地区</div>
+                {/* Stats - Responsive grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mt-3 sm:mt-4">
+                  <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
+                    <Globe className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm sm:text-base">全球覆盖</div>
+                      <div className="text-xs sm:text-sm opacity-80 truncate">支持150+国家和地区</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
-                    <CheckCircle className="h-10 w-10 opacity-80" />
-                    <div>
-                      <div className="font-semibold">高接收率</div>
-                      <div className="text-sm opacity-80">成功率达99.9%</div>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
+                    <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm sm:text-base">高接收率</div>
+                      <div className="text-xs sm:text-sm opacity-80 truncate">成功率达99.9%</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
-                    <Zap className="h-10 w-10 opacity-80" />
-                    <div>
-                      <div className="font-semibold">即时到账</div>
-                      <div className="text-sm opacity-80">充值秒到，即刻使用</div>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
+                    <Zap className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm sm:text-base">即时到账</div>
+                      <div className="text-xs sm:text-sm opacity-80 truncate">充值秒到，即刻使用</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Search and Filters */}
-              <div className="bg-card rounded-xl shadow-sm p-4">
-                <div className="flex flex-wrap items-center gap-4">
+              <div className="bg-card rounded-xl shadow-sm p-3 sm:p-4">
+                {/* Mobile: Stacked layout */}
+                <div className="flex flex-col gap-3 sm:hidden">
+                  {/* Search Input - Full width on mobile */}
+                  <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="搜索国家/地区..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  {/* Region Tabs - Scrollable on mobile */}
+                  <div className="overflow-x-auto -mx-3 px-3">
+                    <div className="flex gap-1 bg-muted rounded-lg p-1 w-max">
+                      {regions.map((region) => (
+                        <button
+                          key={region.key}
+                          onClick={() => setSelectedRegion(region.key)}
+                          className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                            selectedRegion === region.key
+                              ? 'bg-secondary text-secondary-foreground'
+                              : 'hover:bg-muted-foreground/10 text-muted-foreground'
+                          }`}
+                        >
+                          {region.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sort Select */}
+                  <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
+                    <SelectTrigger className="w-full">
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popular">按热门排序</SelectItem>
+                      <SelectItem value="name">按名称排序</SelectItem>
+                      <SelectItem value="code">按国家代码排序</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Desktop: Horizontal layout */}
+                <div className="hidden sm:flex flex-wrap items-center gap-4">
                   {/* Region Tabs */}
                   <div className="flex gap-1 bg-muted rounded-lg p-1">
                     {regions.map((region) => (
@@ -502,15 +580,15 @@ const Index = () => {
               </div>
 
               {/* Features */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {features.map((feature, index) => (
-                  <div key={index} className="bg-card rounded-xl shadow-sm p-5 flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                      <feature.icon className="h-6 w-6 text-secondary" />
+                  <div key={index} className="bg-card rounded-xl shadow-sm p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                      <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg text-secondary">{feature.title}</h3>
-                      <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-base sm:text-lg text-secondary">{feature.title}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{feature.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -518,19 +596,19 @@ const Index = () => {
 
               {/* Usage Steps */}
               <div className="bg-primary text-primary-foreground rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                <div className="px-3 sm:px-4 py-3 border-b border-white/10 flex items-center gap-2">
                   <RefreshCw className="h-5 w-5" />
-                  <h2 className="font-semibold">使用流程</h2>
+                  <h2 className="font-semibold text-sm sm:text-base">使用流程</h2>
                 </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-4 gap-6">
+                <div className="p-4 sm:p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                     {steps.map((step, index) => (
                       <div key={index} className="text-center">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/10 flex items-center justify-center">
-                          <step.icon className="h-8 w-8" />
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 rounded-full bg-white/10 flex items-center justify-center">
+                          <step.icon className="h-6 w-6 sm:h-8 sm:w-8" />
                         </div>
-                        <h4 className="font-semibold mb-1">{step.title}</h4>
-                        <p className="text-sm opacity-80">{step.desc}</p>
+                        <h4 className="font-semibold text-sm sm:text-base mb-0.5 sm:mb-1">{step.title}</h4>
+                        <p className="text-xs sm:text-sm opacity-80">{step.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -618,19 +696,19 @@ const Index = () => {
 
                   {/* Get Number Button */}
                   {selectedService && (
-                    <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-secondary/10 to-accent/10 flex items-center justify-between">
+                    <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-secondary/10 to-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                       <div>
-                        <div className="text-sm text-muted-foreground mb-1">
+                        <div className="text-xs sm:text-sm text-muted-foreground mb-1">
                           {selectedCountry.flag} {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en} · {selectedService.name}
                         </div>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-muted-foreground">总价：</span>
-                          <span className="text-3xl font-bold text-accent">${calculatePrice()}</span>
+                          <span className="text-muted-foreground text-sm">总价：</span>
+                          <span className="text-2xl sm:text-3xl font-bold text-accent">${calculatePrice()}</span>
                         </div>
                       </div>
                       <Button
                         size="lg"
-                        className="bg-secondary hover:bg-secondary/90 text-lg px-8 shadow-lg"
+                        className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-base sm:text-lg px-6 sm:px-8 shadow-lg"
                         onClick={handleGetNumber}
                       >
                         <Phone className="h-5 w-5 mr-2" />
