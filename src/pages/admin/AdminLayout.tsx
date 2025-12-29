@@ -8,7 +8,8 @@ import {
   CreditCard, 
   ShoppingCart,
   Settings,
-  ArrowLeft
+  ArrowLeft,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -49,6 +50,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { icon: Users, label: '用户管理', path: '/admin/users' },
     { icon: ShoppingCart, label: '订单管理', path: '/admin/orders' },
     { icon: CreditCard, label: '交易管理', path: '/admin/transactions' },
+    { icon: Upload, label: '数据导入', path: '/admin/import' },
   ];
 
   return (
