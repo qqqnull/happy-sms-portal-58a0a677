@@ -424,8 +424,8 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Services Preview */}
-              <div className="bg-card rounded-xl shadow-sm">
+              {/* Services Preview - Scrolling Animation */}
+              <div className="bg-card rounded-xl shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                   <div className="flex items-center gap-2">
                     <Smartphone className="h-5 w-5 text-secondary" />
@@ -434,13 +434,118 @@ const Index = () => {
                   <span className="text-sm text-muted-foreground">支持 {services.length}+ 主流应用服务</span>
                 </div>
 
-                <div className="p-6 text-center">
-                  <div className="inline-flex items-center gap-3 px-6 py-4 rounded-xl bg-secondary/10 text-secondary">
-                    <Phone className="h-8 w-8" />
-                    <div className="text-left">
-                      <div className="font-semibold text-lg">获取号码</div>
-                      <div className="text-sm opacity-80">点击获取号码按钮后，系统将为您分配一个临时手机号码用于接收验证码</div>
+                <div className="p-4">
+                  {/* Scrolling Services Showcase */}
+                  <div className="relative overflow-hidden">
+                    {/* First row - scrolling left */}
+                    <div className="flex gap-3 animate-scroll-left mb-3">
+                      {[...services, ...services].map((service, index) => (
+                        <div
+                          key={`row1-${index}`}
+                          className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary transition-all"
+                        >
+                          <div className="text-2xl mb-1">
+                            {service.icon === 'whatsapp' && '💬'}
+                            {service.icon === 'telegram' && '✈️'}
+                            {service.icon === 'google' && '🔍'}
+                            {service.icon === 'facebook' && '👤'}
+                            {service.icon === 'twitter' && '🐦'}
+                            {service.icon === 'instagram' && '📷'}
+                            {service.icon === 'tiktok' && '🎵'}
+                            {service.icon === 'wechat' && '💚'}
+                            {service.icon === 'alipay' && '💰'}
+                            {service.icon === 'discord' && '🎮'}
+                            {service.icon === 'snapchat' && '👻'}
+                            {service.icon === 'linkedin' && '💼'}
+                            {service.icon === 'microsoft' && '🪟'}
+                            {service.icon === 'apple' && '🍎'}
+                            {service.icon === 'amazon' && '📦'}
+                            {service.icon === 'netflix' && '🎬'}
+                            {service.icon === 'uber' && '🚗'}
+                            {service.icon === 'paypal' && '💳'}
+                            {service.icon === 'binance' && '🪙'}
+                            {service.icon === 'okx' && '📊'}
+                            {service.icon === 'coinbase' && '💎'}
+                            {service.icon === 'steam' && '🎮'}
+                            {service.icon === 'line' && '💬'}
+                            {service.icon === 'viber' && '📞'}
+                            {service.icon === 'tinder' && '❤️'}
+                            {!['whatsapp', 'telegram', 'google', 'facebook', 'twitter', 'instagram', 'tiktok', 'wechat', 'alipay', 'discord', 'snapchat', 'linkedin', 'microsoft', 'apple', 'amazon', 'netflix', 'uber', 'paypal', 'binance', 'okx', 'coinbase', 'steam', 'line', 'viber', 'tinder'].includes(service.icon || '') && '📱'}
+                          </div>
+                          <div className="font-medium text-sm truncate text-foreground">{service.name}</div>
+                          {service.is_popular && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              热门
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
+                    
+                    {/* Second row - scrolling right */}
+                    <div className="flex gap-3 animate-scroll-right">
+                      {[...services.slice().reverse(), ...services.slice().reverse()].map((service, index) => (
+                        <div
+                          key={`row2-${index}`}
+                          className="flex-shrink-0 w-32 p-3 rounded-xl border border-border bg-card hover:border-secondary transition-all"
+                        >
+                          <div className="text-2xl mb-1">
+                            {service.icon === 'whatsapp' && '💬'}
+                            {service.icon === 'telegram' && '✈️'}
+                            {service.icon === 'google' && '🔍'}
+                            {service.icon === 'facebook' && '👤'}
+                            {service.icon === 'twitter' && '🐦'}
+                            {service.icon === 'instagram' && '📷'}
+                            {service.icon === 'tiktok' && '🎵'}
+                            {service.icon === 'wechat' && '💚'}
+                            {service.icon === 'alipay' && '💰'}
+                            {service.icon === 'discord' && '🎮'}
+                            {service.icon === 'snapchat' && '👻'}
+                            {service.icon === 'linkedin' && '💼'}
+                            {service.icon === 'microsoft' && '🪟'}
+                            {service.icon === 'apple' && '🍎'}
+                            {service.icon === 'amazon' && '📦'}
+                            {service.icon === 'netflix' && '🎬'}
+                            {service.icon === 'uber' && '🚗'}
+                            {service.icon === 'paypal' && '💳'}
+                            {service.icon === 'binance' && '🪙'}
+                            {service.icon === 'okx' && '📊'}
+                            {service.icon === 'coinbase' && '💎'}
+                            {service.icon === 'steam' && '🎮'}
+                            {service.icon === 'line' && '💬'}
+                            {service.icon === 'viber' && '📞'}
+                            {service.icon === 'tinder' && '❤️'}
+                            {!['whatsapp', 'telegram', 'google', 'facebook', 'twitter', 'instagram', 'tiktok', 'wechat', 'alipay', 'discord', 'snapchat', 'linkedin', 'microsoft', 'apple', 'amazon', 'netflix', 'uber', 'paypal', 'binance', 'okx', 'coinbase', 'steam', 'line', 'viber', 'tinder'].includes(service.icon || '') && '📱'}
+                          </div>
+                          <div className="font-medium text-sm truncate text-foreground">{service.name}</div>
+                          {service.is_popular && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                              热门
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Gradient overlays */}
+                    <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-card to-transparent pointer-events-none z-10"></div>
+                    <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-card to-transparent pointer-events-none z-10"></div>
+                  </div>
+
+                  {/* Info banner */}
+                  <div className="mt-4 p-4 rounded-xl bg-secondary/10 text-center">
+                    <p className="text-muted-foreground">
+                      登录后可查看每个国家支持的全部服务项目，部分国家支持高达 <span className="text-secondary font-bold">180+</span> 种服务
+                    </p>
+                    {!user && (
+                      <Button 
+                        className="mt-3 bg-secondary hover:bg-secondary/90"
+                        onClick={() => navigate('/login')}
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        立即登录查看
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
