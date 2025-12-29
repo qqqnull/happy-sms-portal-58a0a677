@@ -35,6 +35,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import AppHeader from '@/components/layout/AppHeader';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { getServiceIcon } from '@/lib/serviceIcons';
 
 interface Country {
@@ -100,14 +101,18 @@ const Index = () => {
     setLoading(false);
   };
 
-  const regions: { key: Region; label: string }[] = [
-    { key: 'all', label: '所有地区' },
-    { key: 'asia', label: '亚洲' },
-    { key: 'europe', label: '欧洲' },
-    { key: 'americas', label: '美洲' },
-    { key: 'africa', label: '非洲' },
-    { key: 'oceania', label: '大洋洲' },
+  const regions: { key: Region; labelZh: string; labelEn: string }[] = [
+    { key: 'all', labelZh: '所有地区', labelEn: 'All' },
+    { key: 'asia', labelZh: '亚洲', labelEn: 'Asia' },
+    { key: 'europe', labelZh: '欧洲', labelEn: 'Europe' },
+    { key: 'americas', labelZh: '美洲', labelEn: 'Americas' },
+    { key: 'africa', labelZh: '非洲', labelEn: 'Africa' },
+    { key: 'oceania', labelZh: '大洋洲', labelEn: 'Oceania' },
   ];
+
+  const getRegionLabel = (region: { labelZh: string; labelEn: string }) => {
+    return lang === 'zh' ? region.labelZh : region.labelEn;
+  };
 
   const filteredCountries = countries
     .filter((country) => {
@@ -170,40 +175,43 @@ const Index = () => {
   };
 
   const navItems = [
-    { icon: Smartphone, label: '获取接码号码', path: '/', active: true },
-    { icon: FileText, label: 'API接口服务', path: '/api-docs' },
-    { icon: Headphones, label: '客户支持中心', path: '/support' },
-    { icon: HelpCircle, label: '常见问题解答', path: '/faq' },
-    { icon: BookOpen, label: '使用教程', path: '/tutorial' },
+    { icon: Smartphone, labelZh: '获取接码号码', labelEn: 'Get Number', path: '/', active: true },
+    { icon: FileText, labelZh: 'API接口服务', labelEn: 'API Service', path: '/api-docs' },
+    { icon: Headphones, labelZh: '客户支持中心', labelEn: 'Support', path: '/support' },
+    { icon: HelpCircle, labelZh: '常见问题解答', labelEn: 'FAQ', path: '/faq' },
+    { icon: BookOpen, labelZh: '使用教程', labelEn: 'Tutorial', path: '/tutorial' },
   ];
 
   const securityBadges = [
-    { icon: Lock, label: 'SSL加密' },
-    { icon: ShieldCheck, label: '实名认证' },
-    { icon: Database, label: '资金存管' },
-    { icon: Shield, label: '数据加密' },
+    { icon: Lock, labelZh: 'SSL加密', labelEn: 'SSL' },
+    { icon: ShieldCheck, labelZh: '实名认证', labelEn: 'Verified' },
+    { icon: Database, labelZh: '资金存管', labelEn: 'Custody' },
+    { icon: Shield, labelZh: '数据加密', labelEn: 'Encrypted' },
   ];
 
   const features = [
-    { icon: Shield, title: '安全可靠', desc: '一次性号码，保障隐私安全' },
-    { icon: Zap, title: '快速响应', desc: '验证码实时接收，无需等待' },
-    { icon: Globe, title: '全球覆盖', desc: '支持全球150+国家地区' },
+    { icon: Shield, titleZh: '安全可靠', titleEn: 'Secure', descZh: '一次性号码，保障隐私安全', descEn: 'One-time numbers for privacy' },
+    { icon: Zap, titleZh: '快速响应', titleEn: 'Fast', descZh: '验证码实时接收，无需等待', descEn: 'Real-time code reception' },
+    { icon: Globe, titleZh: '全球覆盖', titleEn: 'Global', descZh: '支持全球150+国家地区', descEn: '150+ countries worldwide' },
   ];
 
   const steps = [
-    { icon: UserPlus, title: '注册登录', desc: '创建账户或登录系统' },
-    { icon: MapPin, title: '选择国家', desc: '选择国家和服务' },
-    { icon: Phone, title: '获取号码', desc: '系统分配接码号码' },
-    { icon: MessageSquare, title: '接收验证码', desc: '实时查看验证码' },
+    { icon: UserPlus, titleZh: '注册登录', titleEn: 'Register', descZh: '创建账户或登录系统', descEn: 'Create or login' },
+    { icon: MapPin, titleZh: '选择国家', titleEn: 'Select', descZh: '选择国家和服务', descEn: 'Choose country & service' },
+    { icon: Phone, titleZh: '获取号码', titleEn: 'Get Number', descZh: '系统分配接码号码', descEn: 'System assigns number' },
+    { icon: MessageSquare, titleZh: '接收验证码', titleEn: 'Receive', descZh: '实时查看验证码', descEn: 'View code real-time' },
   ];
 
   // Sidebar content component for reuse
   const SidebarContent = () => (
     <div className="space-y-4">
+      {/* Language Switcher for sidebar */}
+      <LanguageSwitcher variant="sidebar" />
+
       {/* Navigation */}
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold">
-          服务导航
+          {t('serviceNav')}
         </div>
         <nav className="p-2">
           {navItems.map((item, index) => (
@@ -217,7 +225,7 @@ const Index = () => {
               }`}
             >
               <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
+              <span>{lang === 'zh' ? item.labelZh : item.labelEn}</span>
             </Link>
           ))}
         </nav>
@@ -227,13 +235,13 @@ const Index = () => {
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <div className="bg-primary text-primary-foreground px-4 py-3 font-semibold flex items-center gap-2">
           <Shield className="h-5 w-5" />
-          安全保障
+          {t('securityTitle')}
         </div>
         <div className="p-4 grid grid-cols-2 gap-3">
           {securityBadges.map((badge, index) => (
             <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
               <badge.icon className="h-4 w-4 text-success" />
-              <span>{badge.label}</span>
+              <span>{lang === 'zh' ? badge.labelZh : badge.labelEn}</span>
             </div>
           ))}
         </div>
@@ -244,11 +252,11 @@ const Index = () => {
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/10 flex items-center justify-center">
           <Headphones className="h-8 w-8 text-secondary" />
         </div>
-        <h3 className="font-semibold mb-1">专业技术支持</h3>
-        <p className="text-sm text-muted-foreground mb-4">7x24小时全天候服务响应</p>
+        <h3 className="font-semibold mb-1">{t('techSupport')}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{t('techSupportDesc')}</p>
         <Button className="w-full bg-primary hover:bg-primary/90">
           <MessageSquare className="h-4 w-4 mr-2" />
-          咨询客服
+          {t('contactSupport')}
         </Button>
       </div>
     </div>
@@ -269,7 +277,7 @@ const Index = () => {
           </SheetTrigger>
           <SheetContent side="left" className="w-[300px] p-4 overflow-y-auto">
             <SheetHeader className="mb-4">
-              <SheetTitle>服务导航</SheetTitle>
+              <SheetTitle>{t('serviceNav')}</SheetTitle>
             </SheetHeader>
             <SidebarContent />
           </SheetContent>
@@ -292,16 +300,16 @@ const Index = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <Wifi className="h-5 w-5 sm:h-6 sm:w-6" />
-                    <h1 className="text-lg sm:text-xl font-bold">接码服务中心</h1>
+                    <h1 className="text-lg sm:text-xl font-bold">{t('serviceCenter')}</h1>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                     <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-success/20 text-success text-xs sm:text-sm">
                       <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-success animate-pulse"></span>
-                      系统正常
+                      {t('systemNormal')}
                     </span>
                     <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-white/10 text-xs sm:text-sm">
                       <RefreshCw className="h-3 w-3" />
-                      实时更新
+                      {t('realTimeUpdate')}
                     </span>
                   </div>
                 </div>
@@ -311,22 +319,22 @@ const Index = () => {
                   <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
                     <Globe className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm sm:text-base">全球覆盖</div>
-                      <div className="text-xs sm:text-sm opacity-80 truncate">支持150+国家和地区</div>
+                      <div className="font-semibold text-sm sm:text-base">{t('globalCoverage')}</div>
+                      <div className="text-xs sm:text-sm opacity-80 truncate">{t('globalCoverageDesc')}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
                     <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm sm:text-base">高接收率</div>
-                      <div className="text-xs sm:text-sm opacity-80 truncate">成功率达99.9%</div>
+                      <div className="font-semibold text-sm sm:text-base">{t('highSuccessRate')}</div>
+                      <div className="text-xs sm:text-sm opacity-80 truncate">{t('highSuccessRateDesc')}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
                     <Zap className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm sm:text-base">即时到账</div>
-                      <div className="text-xs sm:text-sm opacity-80 truncate">充值秒到，即刻使用</div>
+                      <div className="font-semibold text-sm sm:text-base">{t('instantRecharge')}</div>
+                      <div className="text-xs sm:text-sm opacity-80 truncate">{t('instantRechargeDesc')}</div>
                     </div>
                   </div>
                 </div>
@@ -340,7 +348,7 @@ const Index = () => {
                   <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="搜索国家/地区..."
+                      placeholder={t('searchCountry')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
@@ -360,7 +368,7 @@ const Index = () => {
                               : 'hover:bg-muted-foreground/10 text-muted-foreground'
                           }`}
                         >
-                          {region.label}
+                          {getRegionLabel(region)}
                         </button>
                       ))}
                     </div>
@@ -373,9 +381,9 @@ const Index = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="popular">按热门排序</SelectItem>
-                      <SelectItem value="name">按名称排序</SelectItem>
-                      <SelectItem value="code">按国家代码排序</SelectItem>
+                      <SelectItem value="popular">{t('sortByPopular')}</SelectItem>
+                      <SelectItem value="name">{t('sortByName')}</SelectItem>
+                      <SelectItem value="code">{t('sortByCode')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -394,7 +402,7 @@ const Index = () => {
                             : 'hover:bg-muted-foreground/10 text-muted-foreground'
                         }`}
                       >
-                        {region.label}
+                        {getRegionLabel(region)}
                       </button>
                     ))}
                   </div>
@@ -405,7 +413,7 @@ const Index = () => {
                   <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="搜索国家/地区..."
+                      placeholder={t('searchCountry')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
@@ -421,7 +429,7 @@ const Index = () => {
                     <SelectContent>
                       {regions.map((region) => (
                         <SelectItem key={region.key} value={region.key}>
-                          {region.label}
+                          {getRegionLabel(region)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -434,9 +442,9 @@ const Index = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="popular">按热门排序</SelectItem>
-                      <SelectItem value="name">按名称排序</SelectItem>
-                      <SelectItem value="code">按国家代码排序</SelectItem>
+                      <SelectItem value="popular">{t('sortByPopular')}</SelectItem>
+                      <SelectItem value="name">{t('sortByName')}</SelectItem>
+                      <SelectItem value="code">{t('sortByCode')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -447,27 +455,27 @@ const Index = () => {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                   <div className="flex items-center gap-2">
                     <Globe className="h-5 w-5 text-secondary" />
-                    <h2 className="font-semibold">选择国家/地区</h2>
+                    <h2 className="font-semibold">{t('selectCountryTitle')}</h2>
                   </div>
-                  <span className="text-sm text-muted-foreground">支持 {countries.length}+ 国家和地区</span>
+                  <span className="text-sm text-muted-foreground">{t('countryCount')}</span>
                 </div>
 
                 <div className="p-4">
                   {loading ? (
                     <div className="text-center py-16">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>
-                      <p className="text-muted-foreground mt-4">正在加载国家数据...</p>
+                      <p className="text-muted-foreground mt-4">{t('loading')}</p>
                     </div>
                   ) : !user ? (
                     <div className="text-center py-16">
                       <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground mb-4">请登录后查看所有可用国家和地区</p>
+                      <p className="text-muted-foreground mb-4">{t('loginToView')}</p>
                       <Button 
                         className="bg-primary hover:bg-primary/90"
                         onClick={() => navigate('/login')}
                       >
                         <LogIn className="h-4 w-4 mr-2" />
-                        立即登录
+                        {t('loginNow')}
                       </Button>
                     </div>
                   ) : filteredCountries.length > 0 ? (
@@ -488,7 +496,7 @@ const Index = () => {
                           </div>
                           {country.is_popular && (
                             <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                              热门
+                              {t('popular')}
                             </span>
                           )}
                         </div>
@@ -497,7 +505,7 @@ const Index = () => {
                   ) : (
                     <div className="text-center py-16">
                       <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">没有找到匹配的国家</p>
+                      <p className="text-muted-foreground">{t('noCountries')}</p>
                     </div>
                   )}
                 </div>
@@ -508,9 +516,9 @@ const Index = () => {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                   <div className="flex items-center gap-2">
                     <Smartphone className="h-5 w-5 text-secondary" />
-                    <h2 className="font-semibold">选择服务</h2>
+                    <h2 className="font-semibold">{t('selectServiceTitle')}</h2>
                   </div>
-                  <span className="text-sm text-muted-foreground">支持 {services.length}+ 主流应用服务</span>
+                  <span className="text-sm text-muted-foreground">{t('serviceCount')}</span>
                 </div>
 
                 <div className="p-4">
@@ -529,7 +537,7 @@ const Index = () => {
                           {service.is_popular && (
                             <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
                               <Star className="h-3 w-3" />
-                              热门
+                              {t('popular')}
                             </span>
                           )}
                         </div>
@@ -549,7 +557,7 @@ const Index = () => {
                           {service.is_popular && (
                             <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
                               <Star className="h-3 w-3" />
-                              热门
+                              {t('popular')}
                             </span>
                           )}
                         </div>
@@ -564,7 +572,10 @@ const Index = () => {
                   {/* Info banner */}
                   <div className="mt-4 p-4 rounded-xl bg-secondary/10 text-center">
                     <p className="text-muted-foreground">
-                      登录后可查看每个国家支持的全部服务项目，部分国家支持高达 <span className="text-secondary font-bold">180+</span> 种服务
+                      {lang === 'zh' 
+                        ? <>登录后可查看每个国家支持的全部服务项目，部分国家支持高达 <span className="text-secondary font-bold">180+</span> 种服务</>
+                        : <>Login to view all services for each country, some support up to <span className="text-secondary font-bold">180+</span> services</>
+                      }
                     </p>
                     {!user && (
                       <Button 
@@ -572,7 +583,7 @@ const Index = () => {
                         onClick={() => navigate('/login')}
                       >
                         <LogIn className="h-4 w-4 mr-2" />
-                        立即登录查看
+                        {t('loginNow')}
                       </Button>
                     )}
                   </div>
@@ -587,8 +598,12 @@ const Index = () => {
                       <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-bold text-base sm:text-lg text-secondary">{feature.title}</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground">{feature.desc}</p>
+                      <h3 className="font-bold text-base sm:text-lg text-secondary">
+                        {lang === 'zh' ? feature.titleZh : feature.titleEn}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {lang === 'zh' ? feature.descZh : feature.descEn}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -598,7 +613,7 @@ const Index = () => {
               <div className="bg-primary text-primary-foreground rounded-xl overflow-hidden">
                 <div className="px-3 sm:px-4 py-3 border-b border-white/10 flex items-center gap-2">
                   <RefreshCw className="h-5 w-5" />
-                  <h2 className="font-semibold text-sm sm:text-base">使用流程</h2>
+                  <h2 className="font-semibold text-sm sm:text-base">{t('usageSteps')}</h2>
                 </div>
                 <div className="p-4 sm:p-6">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
@@ -607,8 +622,12 @@ const Index = () => {
                         <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 rounded-full bg-white/10 flex items-center justify-center">
                           <step.icon className="h-6 w-6 sm:h-8 sm:w-8" />
                         </div>
-                        <h4 className="font-semibold text-sm sm:text-base mb-0.5 sm:mb-1">{step.title}</h4>
-                        <p className="text-xs sm:text-sm opacity-80">{step.desc}</p>
+                        <h4 className="font-semibold text-sm sm:text-base mb-0.5 sm:mb-1">
+                          {lang === 'zh' ? step.titleZh : step.titleEn}
+                        </h4>
+                        <p className="text-xs sm:text-sm opacity-80">
+                          {lang === 'zh' ? step.descZh : step.descEn}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -624,7 +643,7 @@ const Index = () => {
                 className="mb-2"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                返回国家列表
+                {t('backToCountry')}
               </Button>
 
               {/* Selected Country Info */}
@@ -645,9 +664,11 @@ const Index = () => {
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Smartphone className="h-5 w-5 text-secondary" />
-                    <h3 className="font-semibold">选择服务</h3>
+                    <h3 className="font-semibold">{t('selectServiceTitle')}</h3>
                   </div>
-                  <span className="text-sm text-muted-foreground">可用服务 {services.length} 项</span>
+                  <span className="text-sm text-muted-foreground">
+                    {lang === 'zh' ? `可用服务 ${services.length} 项` : `${services.length} services available`}
+                  </span>
                 </div>
                 <div className="p-4">
                   {/* Search for services */}
@@ -655,7 +676,7 @@ const Index = () => {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="搜索服务..."
+                        placeholder={t('searchService')}
                         className="pl-10"
                       />
                     </div>
@@ -686,7 +707,7 @@ const Index = () => {
                           {service.is_popular && (
                             <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
                               <Star className="h-3 w-3" />
-                              热门
+                              {t('popular')}
                             </span>
                           )}
                         </div>
@@ -702,7 +723,9 @@ const Index = () => {
                           {selectedCountry.flag} {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en} · {selectedService.name}
                         </div>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-muted-foreground text-sm">总价：</span>
+                          <span className="text-muted-foreground text-sm">
+                            {lang === 'zh' ? '总价：' : 'Total:'}
+                          </span>
                           <span className="text-2xl sm:text-3xl font-bold text-accent">${calculatePrice()}</span>
                         </div>
                       </div>
@@ -712,7 +735,7 @@ const Index = () => {
                         onClick={handleGetNumber}
                       >
                         <Phone className="h-5 w-5 mr-2" />
-                        获取号码
+                        {t('getNumberBtn')}
                       </Button>
                     </div>
                   )}
@@ -727,14 +750,14 @@ const Index = () => {
       <Dialog open={showInsufficientDialog} onOpenChange={setShowInsufficientDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>余额不足</DialogTitle>
+            <DialogTitle>{t('insufficientBalance')}</DialogTitle>
             <DialogDescription>
-              请先充值后再获取号码
+              {t('pleaseRecharge')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInsufficientDialog(false)}>
-              取消
+              {t('cancel')}
             </Button>
             <Button 
               className="bg-accent hover:bg-accent/90"
@@ -743,7 +766,7 @@ const Index = () => {
                 navigate('/recharge');
               }}
             >
-              去充值
+              {t('goRecharge')}
             </Button>
           </DialogFooter>
         </DialogContent>
