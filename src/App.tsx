@@ -10,6 +10,13 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RechargePage from "./pages/RechargePage";
 import RechargeUsdtPage from "./pages/RechargeUsdtPage";
+import OrdersPage from "./pages/OrdersPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminCountries from "./pages/admin/AdminCountries";
+import AdminServices from "./pages/admin/AdminServices";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminTransactions from "./pages/admin/AdminTransactions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +35,13 @@ const App = () => (
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/recharge" element={<RechargePage />} />
               <Route path="/recharge_usdt_page" element={<RechargeUsdtPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/countries" element={<AdminCountries />} />
+              <Route path="/admin/services" element={<AdminServices />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/transactions" element={<AdminTransactions />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
