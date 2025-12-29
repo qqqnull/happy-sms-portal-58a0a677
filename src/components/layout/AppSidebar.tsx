@@ -1,8 +1,14 @@
-import { Shield, ShieldCheck, Lock, Database, Headphones } from 'lucide-react';
+import { Shield, ShieldCheck, Lock, Database, Headphones, History, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const AppSidebar = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { isAdmin } = useAdminCheck();
+  const navigate = useNavigate();
 
   const securityBadges = [
     { icon: Lock, label: t('sslEncryption') },
@@ -13,6 +19,28 @@ const AppSidebar = () => {
 
   return (
     <aside className="w-60 bg-sidebar text-sidebar-foreground flex flex-col min-h-screen">
+      {/* Navigation Links */}
+      {user && (
+        <div className="p-4 space-y-1 border-b border-sidebar-border">
+          <div
+            onClick={() => navigate('/orders')}
+            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-sidebar-accent transition-colors cursor-pointer"
+          >
+            <History className="h-4 w-4" />
+            <span>{t('orderHistory')}</span>
+          </div>
+          {isAdmin && (
+            <div
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-sidebar-accent transition-colors cursor-pointer text-accent"
+            >
+              <Settings className="h-4 w-4" />
+              <span>管理后台</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Security Badges */}
       <div className="p-4 space-y-2">
         {securityBadges.map((badge, index) => (
