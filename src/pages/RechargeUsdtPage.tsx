@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/layout/MainLayout';
+import FloatingContactButton from '@/components/FloatingContactButton';
 
 const PAYMENT_TIMEOUT = 15 * 60; // 15 minutes in seconds
 
@@ -180,6 +181,9 @@ const RechargeUsdtPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Contact Button */}
+      <FloatingContactButton />
     </MainLayout>
   );
 };
