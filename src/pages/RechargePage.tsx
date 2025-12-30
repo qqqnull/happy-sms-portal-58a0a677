@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Zap, Shield, ArrowLeft, HelpCircle, Bitcoin } from 'lucide-react';
+import { Wallet, Zap, Shield, ArrowLeft, HelpCircle, Bitcoin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/layout/MainLayout';
+import FloatingContactButton from '@/components/FloatingContactButton';
 
 // Chain configuration with icons
 const chains = [
@@ -17,7 +18,6 @@ const chains = [
     network: 'Tether on TRON Network',
     available: true,
     recommended: true,
-    icon: '🔵' // Tron blue circle
   },
   { 
     id: 'bsc', 
@@ -26,7 +26,6 @@ const chains = [
     network: 'Binance Smart Chain',
     available: false,
     recommended: false,
-    icon: '🟡' // BSC yellow
   },
   { 
     id: 'eth', 
@@ -35,7 +34,6 @@ const chains = [
     network: 'Ethereum Network',
     available: false,
     recommended: false,
-    icon: '🔷' // ETH blue diamond
   },
   { 
     id: 'arb', 
@@ -44,7 +42,6 @@ const chains = [
     network: 'Arbitrum One',
     available: false,
     recommended: false,
-    icon: '🔵' // Arbitrum blue
   },
   { 
     id: 'base', 
@@ -53,7 +50,6 @@ const chains = [
     network: 'Base Network',
     available: false,
     recommended: false,
-    icon: '🔵' // Base blue
   },
   { 
     id: 'sol', 
@@ -62,7 +58,6 @@ const chains = [
     network: 'Solana Network',
     available: false,
     recommended: false,
-    icon: '💜' // Solana purple
   },
   { 
     id: 'xlayer', 
@@ -71,7 +66,6 @@ const chains = [
     network: 'OKX X Layer',
     available: false,
     recommended: false,
-    icon: '⚫' // X Layer black
   },
 ];
 
@@ -114,7 +108,6 @@ const RechargePage = () => {
   };
 
   const handleCustomAmountChange = (value: string) => {
-    // Only allow numbers
     const numValue = value.replace(/[^0-9.]/g, '');
     setCustomAmount(numValue);
     if (numValue) {
@@ -141,6 +134,10 @@ const RechargePage = () => {
 
   const selectedChainData = chains.find(c => c.id === selectedChain);
 
+  const handleContactSupport = () => {
+    window.open('https://t.me/support', '_blank');
+  };
+
   return (
     <MainLayout showSidebar={false}>
       <div className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-start p-4 bg-muted/30">
@@ -165,7 +162,7 @@ const RechargePage = () => {
                 </div>
                 <div>
                   <div className="font-medium">USDT支付</div>
-                  <div className="text-xs opacity-70">仅支持TRC20网络</div>
+                  <div className="text-xs opacity-70">支持多种网络</div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -342,17 +339,24 @@ const RechargePage = () => {
               <ArrowLeft className="h-4 w-4" />
               返回首页
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="gap-2 text-muted-foreground"
+            
+            {/* Prominent Support Button */}
+            <a 
+              href="https://t.me/support" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-warning/10 border-2 border-warning text-warning rounded-lg hover:bg-warning/20 transition-colors"
             >
               <HelpCircle className="h-4 w-4" />
-              充值遇到问题?
-            </Button>
+              <span className="font-medium text-sm">充值遇到问题?</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
         </div>
       </div>
+
+      {/* Floating Contact Button */}
+      <FloatingContactButton />
     </MainLayout>
   );
 };
