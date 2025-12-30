@@ -394,7 +394,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full overflow-x-hidden">
       {/* Header */}
       <AppHeader />
 
@@ -416,14 +416,14 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex">
+      <div className="flex w-full max-w-full overflow-hidden">
         {/* Left Sidebar - Desktop only */}
-        <aside className="w-[280px] min-h-[calc(100vh-56px)] p-4 hidden lg:block">
+        <aside className="w-[280px] min-w-[280px] min-h-[calc(100vh-56px)] p-4 hidden lg:block flex-shrink-0">
           <SidebarContent />
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-4 space-y-3 sm:space-y-4 pb-24 lg:pb-4">
+        <main className="flex-1 min-w-0 p-3 sm:p-4 space-y-3 sm:space-y-4 pb-24 lg:pb-4 overflow-x-hidden">
           {!selectedCountry ? (
             <>
               {/* Service Center Header */}
