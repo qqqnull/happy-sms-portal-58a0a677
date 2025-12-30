@@ -5,15 +5,23 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useAdminCheck = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
+      // Wait for auth to finish loading
+      if (authLoading) {
+        return;
+      }
+
       if (!user) {
+        console.log('useAdminCheck: No user logged in');
         setIsAdmin(false);
         setLoading(false);
         return;
       }
+
+      console.log('useAdminCheck: Checking admin status for user:', user.id);
 
       const { data, error } = await supabase
         .from('user_roles')
@@ -23,16 +31,17 @@ export const useAdminCheck = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error checking admin status:', error);
+        console.error('useAdminCheck: Error checking admin status:', error);
         setIsAdmin(false);
       } else {
+        console.log('useAdminCheck: Admin check result:', data);
         setIsAdmin(!!data);
       }
       setLoading(false);
     };
 
     checkAdminStatus();
-  }, [user]);
+  }, [user, authLoading]);
 
-  return { isAdmin, loading };
+  return { isAdmin, loading: loading || authLoading };
 };
