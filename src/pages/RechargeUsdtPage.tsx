@@ -1,19 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Copy, Check, Clock, DollarSign, Shield, Zap, Info } from 'lucide-react';
+import { Copy, Check, Clock, DollarSign, Shield, Zap, Info, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/layout/MainLayout';
 import FloatingContactButton from '@/components/FloatingContactButton';
+import { supabase } from '@/integrations/supabase/client';
 
 const PAYMENT_TIMEOUT = 15 * 60; // 15 minutes in seconds
+
+// Generate unique payment order ID
+const generatePaymentOrderId = () => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `PAY${timestamp}${random}`;
+};
 
 const RechargeUsdtPage = () => {
   const [searchParams] = useSearchParams();
   const [copied, setCopied] = useState(false);
+  const [copiedOrderId, setCopiedOrderId] = useState(false);
   const [timeLeft, setTimeLeft] = useState(PAYMENT_TIMEOUT);
+  const [paymentOrderId, setPaymentOrderId] = useState<string>('');
+  const hasCreatedOrder = useRef(false);
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -26,11 +37,58 @@ const RechargeUsdtPage = () => {
   const paymentUrl = `${window.location.origin}/recharge_usdt_page?amount=${amount}&order_id=${orderId}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentUrl)}`;
 
+  // Create payment order on mount (only once per session)
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
+
+    const createPaymentOrder = async () => {
+      // Check if we already have a payment order for this request in sessionStorage
+      const storageKey = `payment_order_${orderId}`;
+      const existingOrderId = sessionStorage.getItem(storageKey);
+      
+      if (existingOrderId) {
+        setPaymentOrderId(existingOrderId);
+        return;
+      }
+
+      // Prevent duplicate creation
+      if (hasCreatedOrder.current) return;
+      hasCreatedOrder.current = true;
+
+      // Generate new payment order ID
+      const newPaymentOrderId = generatePaymentOrderId();
+      setPaymentOrderId(newPaymentOrderId);
+      sessionStorage.setItem(storageKey, newPaymentOrderId);
+
+      // Write to database
+      try {
+        const { error } = await supabase.from('transactions').insert({
+          user_id: user.id,
+          amount: parseFloat(amount),
+          type: 'recharge',
+          status: 'pending',
+          order_id: newPaymentOrderId,
+          payment_method: 'TRC20',
+          currency: 'USDT',
+        });
+
+        if (error) {
+          console.error('Error creating payment order:', error);
+          toast({
+            title: '创建订单失败',
+            description: '请重试或联系客服',
+            variant: 'destructive',
+          });
+        }
+      } catch (err) {
+        console.error('Error creating payment order:', err);
+      }
+    };
+
+    createPaymentOrder();
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -49,7 +107,7 @@ const RechargeUsdtPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, amount, orderId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -70,6 +128,24 @@ const RechargeUsdtPage = () => {
       toast({
         title: '复制失败',
         description: '请手动复制链接',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const copyOrderId = async () => {
+    try {
+      await navigator.clipboard.writeText(paymentOrderId);
+      setCopiedOrderId(true);
+      toast({
+        title: '复制成功',
+        description: '订单号已复制到剪贴板',
+      });
+      setTimeout(() => setCopiedOrderId(false), 2000);
+    } catch (err) {
+      toast({
+        title: '复制失败',
+        description: '请手动复制订单号',
         variant: 'destructive',
       });
     }
@@ -114,6 +190,26 @@ const RechargeUsdtPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Payment Order ID */}
+            {paymentOrderId && (
+              <div className="mt-4 bg-primary-foreground/10 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs opacity-70">支付订单号</div>
+                    <div className="text-sm font-mono font-bold">{paymentOrderId}</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary-foreground hover:bg-primary-foreground/20"
+                    onClick={copyOrderId}
+                  >
+                    {copiedOrderId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* QR Code Section */}
@@ -175,6 +271,29 @@ const RechargeUsdtPage = () => {
                   <span className="text-sm">
                     系统将在 <strong>1-5分钟</strong> 内自动确认
                   </span>
+                </div>
+              </div>
+
+              {/* Support Tip with Order ID */}
+              <div className="mt-4 p-4 bg-destructive/10 border-2 border-destructive rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-destructive font-medium">
+                      支付遇到问题?
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      请将订单号 <strong className="text-foreground font-mono">{paymentOrderId}</strong> 提供给客服
+                    </p>
+                    <a 
+                      href="https://t.me/support" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
+                    >
+                      联系客服 →
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
