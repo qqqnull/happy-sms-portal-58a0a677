@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, Globe, CheckCircle, Zap, ArrowLeft, 
   Shield, ShieldCheck, Lock, Database, Headphones,
   Smartphone, FileText, HelpCircle, BookOpen, 
   UserPlus, MapPin, Phone, MessageSquare, LogIn,
-  Filter, ArrowUpDown, RefreshCw, Wifi, Star, Menu
+  Filter, ArrowUpDown, RefreshCw, Wifi, Star, Menu,
+  ChevronLeft, ChevronRight, AlertTriangle, Info, CreditCard, Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +73,9 @@ interface CountryService {
 type Region = 'all' | 'asia' | 'europe' | 'americas' | 'africa' | 'oceania';
 type SortType = 'popular' | 'name' | 'code';
 
+const COUNTRIES_PER_PAGE = 18;
+const SERVICES_PER_PAGE = 12;
+
 const Index = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -87,6 +91,8 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [loadingServices, setLoadingServices] = useState(false);
   const [refreshingNumbers, setRefreshingNumbers] = useState(false);
+  const [countryPage, setCountryPage] = useState(1);
+  const [servicePage, setServicePage] = useState(1);
   
   const { user, profile } = useAuth();
   const { t, lang } = useLanguage();
@@ -176,29 +182,43 @@ const Index = () => {
     return lang === 'zh' ? region.labelZh : region.labelEn;
   };
 
-  const filteredCountries = countries
-    .filter((country) => {
-      const matchesSearch = 
-        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        country.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        country.code.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRegion = selectedRegion === 'all' || country.region === selectedRegion;
-      return matchesSearch && matchesRegion;
-    })
-    .sort((a, b) => {
-      if (sortType === 'popular') {
-        if (a.is_popular && !b.is_popular) return -1;
-        if (!a.is_popular && b.is_popular) return 1;
+  const filteredCountries = useMemo(() => {
+    return countries
+      .filter((country) => {
+        const matchesSearch = 
+          country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          country.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          country.code.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesRegion = selectedRegion === 'all' || country.region === selectedRegion;
+        return matchesSearch && matchesRegion;
+      })
+      .sort((a, b) => {
+        if (sortType === 'popular') {
+          if (a.is_popular && !b.is_popular) return -1;
+          if (!a.is_popular && b.is_popular) return 1;
+          return 0;
+        }
+        if (sortType === 'name') {
+          return lang === 'zh' ? a.name.localeCompare(b.name, 'zh') : a.name_en.localeCompare(b.name_en);
+        }
+        if (sortType === 'code') {
+          return a.code.localeCompare(b.code);
+        }
         return 0;
-      }
-      if (sortType === 'name') {
-        return lang === 'zh' ? a.name.localeCompare(b.name, 'zh') : a.name_en.localeCompare(b.name_en);
-      }
-      if (sortType === 'code') {
-        return a.code.localeCompare(b.code);
-      }
-      return 0;
-    });
+      });
+  }, [countries, searchQuery, selectedRegion, sortType, lang]);
+
+  // Reset country page when filters change
+  useEffect(() => {
+    setCountryPage(1);
+  }, [searchQuery, selectedRegion, sortType]);
+
+  // Pagination for countries
+  const totalCountryPages = Math.ceil(filteredCountries.length / COUNTRIES_PER_PAGE);
+  const paginatedCountries = filteredCountries.slice(
+    (countryPage - 1) * COUNTRIES_PER_PAGE,
+    countryPage * COUNTRIES_PER_PAGE
+  );
 
   // Get services to display - either country-specific or all services
   const displayServices = countryServices.length > 0 
@@ -211,12 +231,26 @@ const Index = () => {
         specificPrice: selectedCountry ? selectedCountry.price * s.price_modifier : 0
       }));
 
-  const filteredServices = displayServices.filter(service => {
-    const searchLower = serviceSearchQuery.toLowerCase();
-    return service.name.toLowerCase().includes(searchLower) ||
-           (service.name_en && service.name_en.toLowerCase().includes(searchLower)) ||
-           (service.description && service.description.toLowerCase().includes(searchLower));
-  });
+  const filteredServices = useMemo(() => {
+    return displayServices.filter(service => {
+      const searchLower = serviceSearchQuery.toLowerCase();
+      return service.name.toLowerCase().includes(searchLower) ||
+             (service.name_en && service.name_en.toLowerCase().includes(searchLower)) ||
+             (service.description && service.description.toLowerCase().includes(searchLower));
+    });
+  }, [displayServices, serviceSearchQuery]);
+
+  // Reset service page when search changes
+  useEffect(() => {
+    setServicePage(1);
+  }, [serviceSearchQuery, selectedCountry]);
+
+  // Pagination for services
+  const totalServicePages = Math.ceil(filteredServices.length / SERVICES_PER_PAGE);
+  const paginatedServices = filteredServices.slice(
+    (servicePage - 1) * SERVICES_PER_PAGE,
+    servicePage * SERVICES_PER_PAGE
+  );
 
   const handleCountrySelect = (country: Country) => {
     if (!user) {
@@ -578,45 +612,71 @@ const Index = () => {
                         {t('loginNow')}
                       </Button>
                     </div>
-                  ) : filteredCountries.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                      {filteredCountries.map((country) => (
-                        <div
-                          key={country.id}
-                          onClick={() => handleCountrySelect(country)}
-                          className="p-4 rounded-xl border border-border hover:border-secondary hover:shadow-lg transition-all cursor-pointer group bg-card"
-                        >
-                          <img 
-                            src={`https://flagcdn.com/w160/${country.code.toLowerCase()}.png`} 
-                            alt={country.name}
-                            className="w-12 h-8 object-cover rounded mb-2"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <div className="font-medium text-foreground group-hover:text-secondary transition-colors truncate">
-                            {lang === 'zh' ? country.name : country.name_en}
+                  ) : paginatedCountries.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
+                        {paginatedCountries.map((country) => (
+                          <div
+                            key={country.id}
+                            onClick={() => handleCountrySelect(country)}
+                            className="p-2 sm:p-3 rounded-lg border border-border hover:border-secondary hover:shadow-lg transition-all cursor-pointer group bg-card"
+                          >
+                            <img 
+                              src={`https://flagcdn.com/w160/${country.code.toLowerCase()}.png`} 
+                              alt={country.name}
+                              className="w-10 h-6 sm:w-12 sm:h-8 object-cover rounded mb-1 sm:mb-2"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="font-medium text-xs sm:text-sm text-foreground group-hover:text-secondary transition-colors truncate">
+                              {lang === 'zh' ? country.name : country.name_en}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{country.code}</div>
+                            
+                            {/* Online count badge */}
+                            <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                              <span className="w-1 h-1 rounded-full bg-success animate-pulse"></span>
+                              {country.online_count || 100}
+                            </div>
+                            
+                            {country.is_popular && (
+                              <span className="inline-flex items-center gap-1 mt-1 ml-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                                <Star className="h-2.5 w-2.5" />
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-muted-foreground">{country.code}</div>
-                          
-                          {/* Online count badge */}
-                          <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
-                            {t('onlineNumbers')}: {country.online_count || 100}
-                          </div>
-                          
-                          {country.is_popular && (
-                            <span className="inline-flex items-center gap-1 mt-2 ml-1 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                              <Star className="h-3 w-3" />
-                              {t('popular')}
-                            </span>
-                          )}
+                        ))}
+                      </div>
+                      
+                      {/* Country Pagination */}
+                      {totalCountryPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCountryPage(p => Math.max(1, p - 1))}
+                            disabled={countryPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-muted-foreground px-3">
+                            {countryPage} / {totalCountryPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCountryPage(p => Math.min(totalCountryPages, p + 1))}
+                            disabled={countryPage === totalCountryPages}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   ) : (
-                    <div className="text-center py-16">
-                      <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <div className="text-center py-12">
+                      <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-muted-foreground">{t('noCountries')}</p>
                     </div>
                   )}
@@ -796,54 +856,71 @@ const Index = () => {
                   </div>
                   
                   {loadingServices ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-secondary mx-auto"></div>
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary mx-auto"></div>
                       <p className="text-muted-foreground mt-3">{t('loading')}</p>
                     </div>
-                  ) : filteredServices.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                      {filteredServices.map((service: any) => {
-                        const isSelected = selectedService?.id === service.id;
-                        
-                        return (
-                          <div
-                            key={service.id}
-                            onClick={() => handleServiceSelect(service)}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                              isSelected 
-                                ? 'border-secondary bg-secondary/5 shadow-lg ring-2 ring-secondary/20' 
-                                : 'border-border hover:border-secondary hover:shadow-md'
-                            }`}
+                  ) : paginatedServices.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                        {paginatedServices.map((service: any) => {
+                          const isSelected = selectedService?.id === service.id;
+                          
+                          return (
+                            <div
+                              key={service.id}
+                              onClick={() => handleServiceSelect(service)}
+                              className={`p-2 sm:p-3 rounded-lg border transition-all cursor-pointer ${
+                                isSelected 
+                                  ? 'border-secondary bg-secondary/5 shadow-lg ring-2 ring-secondary/20' 
+                                  : 'border-border hover:border-secondary hover:shadow-md'
+                              }`}
+                            >
+                              <ServiceIcon name={service.name} icon={service.icon} />
+                              <div className={`font-medium text-xs sm:text-sm truncate mt-1 ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
+                                {service.name}
+                              </div>
+                              <div className="text-xs sm:text-sm font-semibold text-accent mt-1">
+                                ￥{service.specificPrice?.toFixed(2) || '0.00'}
+                              </div>
+                              
+                              {/* Success rate badge */}
+                              <div className="mt-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                                {service.success_rate || 95}%
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Service Pagination */}
+                      {totalServicePages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setServicePage(p => Math.max(1, p - 1))}
+                            disabled={servicePage === 1}
                           >
-                            <ServiceIcon name={service.name} icon={service.icon} />
-                            <div className={`font-medium truncate mt-2 ${isSelected ? 'text-secondary' : 'text-foreground'}`}>
-                              {service.name}
-                            </div>
-                            {service.description && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
-                            )}
-                            <div className="text-sm font-semibold text-accent mt-2">
-                              ￥{service.specificPrice?.toFixed(2) || '0.00'}
-                            </div>
-                            
-                            {/* Success rate badge */}
-                            <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
-                              {t('successRate')}: {service.success_rate || 95}%
-                            </div>
-                            
-                            {service.is_popular && (
-                              <span className="inline-flex items-center gap-1 mt-2 ml-1 px-2 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                                <Star className="h-3 w-3" />
-                                {t('popular')}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-muted-foreground px-3">
+                            {servicePage} / {totalServicePages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setServicePage(p => Math.min(totalServicePages, p + 1))}
+                            disabled={servicePage === totalServicePages}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   ) : (
-                    <div className="text-center py-12">
-                      <Smartphone className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <div className="text-center py-8">
+                      <Smartphone className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                       <p className="text-muted-foreground">{t('noServices')}</p>
                     </div>
                   )}
@@ -884,29 +961,99 @@ const Index = () => {
         </main>
       </div>
 
-      {/* Insufficient Balance Dialog */}
+      {/* Insufficient Balance Dialog - Redesigned */}
       <Dialog open={showInsufficientDialog} onOpenChange={setShowInsufficientDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('insufficientBalance')}</DialogTitle>
-            <DialogDescription>
-              {t('pleaseRecharge')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInsufficientDialog(false)}>
-              {t('cancel')}
-            </Button>
-            <Button 
-              className="bg-accent hover:bg-accent/90"
-              onClick={() => {
-                setShowInsufficientDialog(false);
-                navigate('/recharge');
-              }}
-            >
-              {t('goRecharge')}
-            </Button>
-          </DialogFooter>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          {/* Header */}
+          <div className="bg-primary px-6 py-4 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <DialogTitle className="text-primary-foreground text-lg">
+              {lang === 'zh' ? '账户余额不足' : 'Insufficient Balance'}
+            </DialogTitle>
+          </div>
+          
+          <div className="p-6">
+            {/* Warning Message */}
+            <div className="flex items-start gap-3 mb-5">
+              <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">
+                  {lang === 'zh' ? '您的账户余额不足' : 'Your account balance is insufficient'}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {lang === 'zh' ? '无法获取号码，请先充值后再试' : 'Cannot get number, please recharge first'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Info Tip */}
+            <div className="bg-info/10 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-2">
+                <Info className="h-5 w-5 text-info flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-info">
+                    {lang === 'zh' ? '温馨提示：' : 'Tips:'}
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {lang === 'zh' 
+                      ? '我们提供多种充值选择，充值后即可使用全球验证码接收服务。新用户充值满50元即可享受9折优惠！'
+                      : 'We offer multiple payment options. After recharging, you can use the global verification code service. New users get 10% off on charges over ¥50!'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Recharge Options */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="border border-border rounded-xl p-4 text-center hover:border-secondary transition-colors cursor-pointer group">
+                <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                  <Zap className="h-6 w-6 text-secondary" />
+                </div>
+                <h4 className="font-semibold text-foreground">
+                  {lang === 'zh' ? '快速充值' : 'Quick Recharge'}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {lang === 'zh' ? '即时到账，立即使用' : 'Instant credit'}
+                </p>
+              </div>
+              <div className="border border-border rounded-xl p-4 text-center hover:border-secondary transition-colors cursor-pointer group">
+                <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-success/10 flex items-center justify-center group-hover:bg-success/20 transition-colors">
+                  <CreditCard className="h-6 w-6 text-success" />
+                </div>
+                <h4 className="font-semibold text-foreground">
+                  {lang === 'zh' ? '多种支付' : 'Multiple Payments'}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {lang === 'zh' ? '支持多种支付方式' : 'Various payment methods'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowInsufficientDialog(false)}
+              >
+                {lang === 'zh' ? '稍后充值' : 'Later'}
+              </Button>
+              <Button 
+                className="flex-1 bg-secondary hover:bg-secondary/90"
+                onClick={() => {
+                  setShowInsufficientDialog(false);
+                  navigate('/recharge');
+                }}
+              >
+                <Banknote className="h-4 w-4 mr-2" />
+                {lang === 'zh' ? '立即充值' : 'Recharge Now'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
