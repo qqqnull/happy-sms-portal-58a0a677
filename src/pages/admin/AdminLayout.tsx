@@ -55,9 +55,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex w-full max-w-full overflow-x-hidden">
       {/* Admin Sidebar */}
-      <aside className="w-64 bg-card border-r border-border">
+      <aside className="w-64 min-w-[256px] bg-card border-r border-border flex-shrink-0 hidden md:block">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Settings className="h-6 w-6 text-secondary" />
@@ -97,8 +97,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
       </aside>
 
+      {/* Mobile Sidebar Navigation */}
+      <div className="md:hidden fixed bottom-4 left-4 z-50">
+        <Button
+          size="lg"
+          className="rounded-full shadow-lg bg-primary hover:bg-primary/90 h-14 w-14"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="h-6 w-6" />
+        </Button>
+      </div>
+
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0 overflow-x-hidden">
         {children}
       </main>
     </div>

@@ -9,11 +9,11 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
       <AppHeader />
-      <div className="flex flex-1">
+      <div className="flex flex-1 w-full max-w-full overflow-hidden">
         {showSidebar && <AppSidebar />}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>
