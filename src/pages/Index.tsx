@@ -634,17 +634,19 @@ const Index = () => {
                             </div>
                             <div className="text-xs text-muted-foreground">{country.code}</div>
                             
-                            {/* Online count badge */}
-                            <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
-                              <span className="w-1 h-1 rounded-full bg-success animate-pulse"></span>
-                              {t('online')} {country.online_count || 100}
+                            {/* Online count badge and popular star */}
+                            <div className="mt-1 flex items-end gap-1">
+                              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
+                                <span className="w-1 h-1 rounded-full bg-success animate-pulse"></span>
+                                {t('online')} {country.online_count || 100}
+                              </div>
+                              
+                              {country.is_popular && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
+                                  <Star className="h-2.5 w-2.5" />
+                                </span>
+                              )}
                             </div>
-                            
-                            {country.is_popular && (
-                              <span className="inline-flex items-center gap-1 mt-1 ml-1 px-1.5 py-0.5 rounded text-xs bg-accent/10 text-accent">
-                                <Star className="h-2.5 w-2.5" />
-                              </span>
-                            )}
                           </div>
                         ))}
                       </div>
