@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (username: string, password: string) => {
     // Use username as email format for auth
-    const email = `${username}@globalsms.local`;
+    const email = `${username}@globalsms.app`;
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (username: string, password: string) => {
-    const email = `${username}@globalsms.local`;
+    const email = `${username}@globalsms.app`;
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
