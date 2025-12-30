@@ -41,6 +41,7 @@ interface Country {
   is_popular: boolean;
   is_active: boolean;
   sort_order: number;
+  online_count: number;
 }
 
 const emptyCountry: Omit<Country, 'id'> = {
@@ -53,6 +54,7 @@ const emptyCountry: Omit<Country, 'id'> = {
   is_popular: false,
   is_active: true,
   sort_order: 0,
+  online_count: 100,
 };
 
 const AdminCountries = () => {
@@ -99,6 +101,7 @@ const AdminCountries = () => {
       is_popular: country.is_popular || false,
       is_active: country.is_active ?? true,
       sort_order: country.sort_order || 0,
+      online_count: country.online_count || 100,
     });
     setDialogOpen(true);
   };
@@ -196,6 +199,7 @@ const AdminCountries = () => {
                   <TableHead>区号</TableHead>
                   <TableHead>地区</TableHead>
                   <TableHead>价格</TableHead>
+                  <TableHead>在线数量</TableHead>
                   <TableHead>热门</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>操作</TableHead>
@@ -215,7 +219,13 @@ const AdminCountries = () => {
                     <TableCell>
                       {regions.find(r => r.value === country.region)?.label || country.region}
                     </TableCell>
-                    <TableCell>${country.price.toFixed(2)}</TableCell>
+                    <TableCell>￥{country.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                        {country.online_count || 0}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       {country.is_popular && (
                         <span className="px-2 py-1 rounded text-xs bg-accent/10 text-accent">热门</span>
@@ -320,12 +330,33 @@ const AdminCountries = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>价格 (USD)</Label>
+                  <Label>价格 (￥)</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>在线数量</Label>
+                  <Input
+                    type="number"
+                    value={formData.online_count}
+                    onChange={(e) => setFormData({ ...formData, online_count: parseInt(e.target.value) || 0 })}
+                    placeholder="100"
+                  />
+                </div>
+                <div>
+                  <Label>排序</Label>
+                  <Input
+                    type="number"
+                    value={formData.sort_order}
+                    onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
                   />
                 </div>
               </div>
