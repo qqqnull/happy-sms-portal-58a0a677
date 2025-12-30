@@ -1,21 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Copy, Check, Clock, Wallet, ExternalLink } from 'lucide-react';
+import { Copy, Check, Clock, DollarSign, Shield, Zap, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/layout/MainLayout';
 
-const WALLET_ADDRESS = 'TYDzsYUEpvnYmQk4zGP9sWWcTEd2MiAtW8';
 const PAYMENT_TIMEOUT = 15 * 60; // 15 minutes in seconds
-
-const walletApps = [
-  { name: 'TronLink', icon: '🔗' },
-  { name: 'imToken', icon: '💎' },
-  { name: 'TokenPocket', icon: '🪙' },
-  { name: 'Math Wallet', icon: '🔢' },
-];
 
 const RechargeUsdtPage = () => {
   const [searchParams] = useSearchParams();
@@ -28,6 +20,10 @@ const RechargeUsdtPage = () => {
 
   const amount = searchParams.get('amount') || '50';
   const orderId = searchParams.get('order_id') || '';
+
+  // Generate the payment URL for QR code
+  const paymentUrl = `${window.location.origin}/recharge_usdt_page?amount=${amount}&order_id=${orderId}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentUrl)}`;
 
   useEffect(() => {
     if (!user) {
@@ -60,140 +56,126 @@ const RechargeUsdtPage = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const copyAddress = async () => {
+  const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(WALLET_ADDRESS);
+      await navigator.clipboard.writeText(paymentUrl);
       setCopied(true);
       toast({
         title: '复制成功',
-        description: '钱包地址已复制到剪贴板',
+        description: '支付链接已复制到剪贴板',
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       toast({
         title: '复制失败',
-        description: '请手动复制地址',
+        description: '请手动复制链接',
         variant: 'destructive',
       });
     }
   };
 
-  // Generate QR code URL using a public QR service
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(WALLET_ADDRESS)}`;
-
   return (
     <MainLayout showSidebar={false}>
-      <div className="min-h-[calc(100vh-56px)] flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-secondary/5">
-        <div className="w-full max-w-md">
-          <div className="bg-card rounded-lg shadow-xl overflow-hidden">
-            {/* Header */}
-            <div className="bg-primary p-6 text-primary-foreground">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="px-3 py-1 rounded-full bg-success/20 text-success text-sm font-medium">
-                    TRC20
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4" />
-                  <span className={timeLeft < 120 ? 'text-destructive' : ''}>
-                    {formatTime(timeLeft)}
-                  </span>
-                </div>
+      <div className="min-h-[calc(100vh-56px)] flex items-center justify-center p-4 bg-muted/30">
+        <div className="w-full max-w-lg">
+          {/* Header */}
+          <div className="bg-primary rounded-t-xl p-6 text-primary-foreground">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                <DollarSign className="h-6 w-6" />
               </div>
-              
-              <div className="text-center">
-                <div className="text-sm opacity-80">{t('paymentAmount')}</div>
-                <div className="text-4xl font-bold mt-1">{amount} USDT</div>
-                <div className="text-xs opacity-60 mt-2">订单号: {orderId}</div>
+              <div>
+                <h1 className="text-xl font-bold">USDT充值</h1>
+                <p className="text-sm opacity-80">TRC20网络支付</p>
               </div>
             </div>
 
-            {/* QR Code */}
-            <div className="p-6 flex flex-col items-center">
-              <div className="text-sm text-muted-foreground mb-3">{t('scanQrCode')}</div>
-              <div className="p-4 bg-card border-2 border-border rounded-lg">
+            {/* Amount and Timer */}
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="bg-primary-foreground/10 rounded-lg p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-xs opacity-70">充值金额</div>
+                  <div className="text-lg font-bold">{amount} USDT</div>
+                </div>
+              </div>
+              <div className="bg-primary-foreground/10 rounded-lg p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-xs opacity-70">剩余时间</div>
+                  <div className={`text-lg font-bold ${timeLeft < 120 ? 'text-destructive' : ''}`}>
+                    {formatTime(timeLeft)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* QR Code Section */}
+          <div className="bg-card border border-border rounded-b-xl">
+            <div className="p-6 flex flex-col items-center border-b border-border">
+              <div className="p-4 bg-background border border-border rounded-lg">
                 <img 
                   src={qrCodeUrl} 
                   alt="Payment QR Code" 
                   className="w-48 h-48"
                 />
               </div>
+              <p className="text-sm text-muted-foreground text-center mt-4 max-w-xs">
+                打开钱包首页扫描上方二维码进入支付页面。仅支持TRC20支付渠道，暂不支持交易所提币接口。
+              </p>
             </div>
 
-            {/* Wallet Address */}
-            <div className="px-6 pb-4">
-              <div className="text-sm text-muted-foreground mb-2">钱包地址</div>
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                <code className="flex-1 text-xs break-all font-mono">
-                  {WALLET_ADDRESS}
-                </code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={copyAddress}
-                  className="shrink-0"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-success" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Wallet Apps */}
-            <div className="px-6 pb-4">
-              <div className="text-sm text-muted-foreground mb-3">{t('orUseWallet')}</div>
-              <div className="grid grid-cols-2 gap-2">
-                {walletApps.map((wallet) => (
-                  <Button
-                    key={wallet.name}
-                    variant="outline"
-                    className="h-12 justify-start gap-2"
-                  >
-                    <span className="text-lg">{wallet.icon}</span>
-                    <span>{wallet.name}</span>
-                    <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Copy Link Button */}
-            <div className="px-6 pb-4">
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={copyAddress}
+            {/* Payment Button */}
+            <div className="p-6 border-b border-border">
+              <Button 
+                className="w-full h-12 text-lg font-medium"
+                onClick={copyLink}
               >
-                <Copy className="h-4 w-4 mr-2" />
-                {t('copyAddress')}
+                支付
               </Button>
             </div>
 
-            {/* Warning */}
-            <div className="px-6 pb-6">
-              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
-                <div className="flex gap-3">
-                  <Wallet className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-                  <div className="text-sm text-warning-foreground">
-                    {t('paymentWarning')}
-                  </div>
+            {/* Payment Instructions */}
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Info className="h-5 w-5 text-primary" />
+                <span className="font-medium">支付须知</span>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Shield className="h-5 w-5 text-success shrink-0" />
+                  <span className="text-sm">
+                    请务必使用 <strong>TRC20</strong> 网络转账
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-warning shrink-0" />
+                  <span className="text-sm">
+                    转账金额必须为 <strong>{amount} USDT</strong>
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Clock className="h-5 w-5 text-primary shrink-0" />
+                  <span className="text-sm">
+                    请在 <strong>15分钟</strong> 内完成转账
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Zap className="h-5 w-5 text-primary shrink-0" />
+                  <span className="text-sm">
+                    系统将在 <strong>1-5分钟</strong> 内自动确认
+                  </span>
                 </div>
               </div>
-            </div>
-
-            {/* Back Button */}
-            <div className="px-6 pb-6">
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => navigate('/recharge')}
-              >
-                返回
-              </Button>
             </div>
           </div>
         </div>
