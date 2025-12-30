@@ -193,6 +193,10 @@ const Index = () => {
         return matchesSearch && matchesRegion;
       })
       .sort((a, b) => {
+        // 中国始终排在第一位
+        if (a.code === 'CN') return -1;
+        if (b.code === 'CN') return 1;
+        
         if (sortType === 'popular') {
           if (a.is_popular && !b.is_popular) return -1;
           if (!a.is_popular && b.is_popular) return 1;
