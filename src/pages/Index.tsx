@@ -635,7 +635,7 @@ const Index = () => {
                             <div className="text-xs text-muted-foreground">{country.code}</div>
                             
                             {/* Online count badge and popular star */}
-                            <div className="mt-1 flex items-end gap-1">
+                            <div className="mt-1 flex items-center gap-1">
                               <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
                                 <span className="w-1 h-1 rounded-full bg-success animate-pulse"></span>
                                 {t('online')} {country.online_count || 100}
