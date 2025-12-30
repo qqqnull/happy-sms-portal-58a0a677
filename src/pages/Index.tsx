@@ -963,13 +963,13 @@ const Index = () => {
 
       {/* Insufficient Balance Dialog - Redesigned */}
       <Dialog open={showInsufficientDialog} onOpenChange={setShowInsufficientDialog}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0 border-0 [&>button]:text-primary-foreground [&>button]:hover:text-primary-foreground/80">
           {/* Header */}
-          <div className="bg-primary px-6 py-4 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+          <div className="bg-primary px-6 py-4 flex items-center gap-3 pr-12">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5 text-primary-foreground" />
             </div>
-            <DialogTitle className="text-primary-foreground text-lg">
+            <DialogTitle className="text-primary-foreground text-lg m-0">
               {lang === 'zh' ? '账户余额不足' : 'Insufficient Balance'}
             </DialogTitle>
           </div>
