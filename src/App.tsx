@@ -14,6 +14,7 @@ import OrdersPage from "./pages/OrdersPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCountries from "./pages/admin/AdminCountries";
 import AdminServices from "./pages/admin/AdminServices";
+import AdminCountryServices from "./pages/admin/AdminCountryServices";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminTransactions from "./pages/admin/AdminTransactions";
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/countries" element={<AdminCountries />} />
               <Route path="/admin/services" element={<AdminServices />} />
+              <Route path="/admin/country-services" element={<AdminCountryServices />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/transactions" element={<AdminTransactions />} />

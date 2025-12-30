@@ -47,6 +47,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { icon: LayoutDashboard, label: '仪表盘', path: '/admin' },
     { icon: Globe, label: '国家管理', path: '/admin/countries' },
     { icon: Smartphone, label: '服务管理', path: '/admin/services' },
+    { icon: Settings, label: '国家服务', path: '/admin/country-services' },
     { icon: Users, label: '用户管理', path: '/admin/users' },
     { icon: ShoppingCart, label: '订单管理', path: '/admin/orders' },
     { icon: CreditCard, label: '交易管理', path: '/admin/transactions' },
