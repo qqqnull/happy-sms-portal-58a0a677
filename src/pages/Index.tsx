@@ -637,7 +637,7 @@ const Index = () => {
                             {/* Online count badge */}
                             <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-success/10 text-success text-xs font-medium">
                               <span className="w-1 h-1 rounded-full bg-success animate-pulse"></span>
-                              {country.online_count || 100}
+                              {t('online')} {country.online_count || 100}
                             </div>
                             
                             {country.is_popular && (
