@@ -56,12 +56,14 @@ const AppSidebar = () => {
 
       {/* Customer Support */}
       <div className="mt-auto p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-2 px-3 py-3 rounded-md bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors cursor-pointer">
-          <Headphones className="h-5 w-5 text-secondary" />
-          <div>
-            <div className="text-sm font-medium">{t('customerSupport')}</div>
+        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer">
+          <div className="flex items-center gap-2 px-3 py-3 rounded-md bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors cursor-pointer">
+            <Headphones className="h-5 w-5 text-secondary" />
+            <div>
+              <div className="text-sm font-medium">{t('customerSupport')}</div>
+            </div>
           </div>
-        </div>
+        </a>
       </div>
     </aside>
   );

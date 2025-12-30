@@ -367,10 +367,12 @@ const Index = () => {
         </div>
         <h3 className="font-semibold mb-1">{t('techSupport')}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t('techSupportDesc')}</p>
-        <Button className="w-full bg-primary hover:bg-primary/90">
-          <MessageSquare className="h-4 w-4 mr-2" />
-          {t('contactSupport')}
-        </Button>
+        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer" className="block">
+          <Button className="w-full bg-primary hover:bg-primary/90">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            {t('contactSupport')}
+          </Button>
+        </a>
       </div>
     </div>
   );
