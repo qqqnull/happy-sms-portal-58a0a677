@@ -345,7 +345,7 @@ const RechargePage = () => {
               href="https://t.me/support" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-warning/10 border-2 border-warning text-warning rounded-lg hover:bg-warning/20 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border-2 border-destructive text-destructive rounded-lg hover:bg-destructive/20 transition-colors"
             >
               <HelpCircle className="h-4 w-4" />
               <span className="font-medium text-sm">充值遇到问题?</span>
