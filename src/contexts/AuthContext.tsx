@@ -28,18 +28,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    
-    if (data && !error) {
-      setProfile({
-        id: data.id,
-        username: data.username,
-        balance: Number(data.balance),
-      });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // If profile doesn't exist, sign out the user
+        await supabase.auth.signOut();
+        setProfile(null);
+        setUser(null);
+        setSession(null);
+        return;
+      }
+      
+      if (data) {
+        setProfile({
+          id: data.id,
+          username: data.username,
+          balance: Number(data.balance),
+        });
+      } else {
+        // Profile not found - user was deleted, sign out
+        console.warn('Profile not found for user, signing out');
+        await supabase.auth.signOut();
+        setProfile(null);
+        setUser(null);
+        setSession(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+      setProfile(null);
     }
   };
 
