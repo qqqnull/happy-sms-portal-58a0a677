@@ -145,6 +145,7 @@ export const translations = {
     noServices: '未找到匹配的服务',
     
     // Online count & success rate
+    online: '在线',
     onlineNumbers: '在线号码',
     successRate: '成功率',
     refreshing: '刷新中...',
@@ -289,6 +290,7 @@ export const translations = {
     noServices: 'No services found',
     
     // Online count & success rate
+    online: 'Online',
     onlineNumbers: 'Online',
     successRate: 'Success',
     refreshing: 'Refreshing...',
