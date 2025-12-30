@@ -112,7 +112,7 @@
     @apply border-border;
   }
 
-  html, body {
+  body {
     @apply bg-background text-foreground;
     font-family:
       "Noto Sans SC",
@@ -120,14 +120,6 @@
       BlinkMacSystemFont,
       "Segoe UI",
       sans-serif;
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-
-  #root {
-    width: 100%;
-    max-width: 100vw;
-    overflow-x: hidden;
   }
 }
 
@@ -172,11 +164,11 @@
   }
 
   .animate-scroll-left {
-    animation: scroll-left 180s linear infinite;
+    animation: scroll-left 90s linear infinite;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 180s linear infinite;
+    animation: scroll-right 90s linear infinite;
   }
 
   .animate-scroll-left:hover,
