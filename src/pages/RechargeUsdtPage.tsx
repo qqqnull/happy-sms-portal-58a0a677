@@ -63,12 +63,12 @@ const RechargeUsdtPage = () => {
       setPaymentOrderId(newPaymentOrderId);
       sessionStorage.setItem(storageKey, newPaymentOrderId);
 
-      // Write to database
+      // Write to database (silently, don't show errors to user)
       try {
         const { error } = await supabase.from('transactions').insert({
           user_id: user.id,
           amount: parseFloat(amount),
-          type: 'recharge',
+          type: 'deposit',
           status: 'pending',
           order_id: newPaymentOrderId,
           payment_method: 'TRC20',
@@ -77,11 +77,7 @@ const RechargeUsdtPage = () => {
 
         if (error) {
           console.error('Error creating payment order:', error);
-          toast({
-            title: '创建订单失败',
-            description: '请重试或联系客服',
-            variant: 'destructive',
-          });
+          // Don't show error to user - will handle wallet errors separately
         }
       } catch (err) {
         console.error('Error creating payment order:', err);
