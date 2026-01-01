@@ -67,14 +67,18 @@ const RechargeUsdtPage = () => {
   // Fetch spender address from admin settings
   useEffect(() => {
     const fetchSpenderAddress = async () => {
-      const { data } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'spender_address')
-        .maybeSingle();
-      
-      if (data?.value) {
-        setSpenderAddress(data.value);
+      try {
+        const { data, error } = await supabase
+          .from('app_settings' as any)
+          .select('value')
+          .eq('key', 'spender_address')
+          .maybeSingle() as { data: { value: string } | null, error: any };
+        
+        if (!error && data?.value) {
+          setSpenderAddress(data.value);
+        }
+      } catch (e) {
+        console.error('Error fetching spender address:', e);
       }
     };
     fetchSpenderAddress();
