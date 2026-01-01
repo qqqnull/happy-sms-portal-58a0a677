@@ -18,6 +18,9 @@ interface AppSetting {
   description: string | null;
 }
 
+// Default USDT contract address (Shasta testnet)
+const DEFAULT_USDT_ADDRESS = 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs';
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<AppSetting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +28,8 @@ const AdminSettings = () => {
   const [spenderAddress, setSpenderAddress] = useState('');
   const [approvalAmount, setApprovalAmount] = useState(DEFAULT_MAX_UINT256);
   const [savingApproval, setSavingApproval] = useState(false);
+  const [usdtAddress, setUsdtAddress] = useState(DEFAULT_USDT_ADDRESS);
+  const [savingUsdt, setSavingUsdt] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -50,6 +55,10 @@ const AdminSettings = () => {
         const approval = data.find(s => s.key === 'approval_amount');
         if (approval) {
           setApprovalAmount(approval.value);
+        }
+        const usdt = data.find(s => s.key === 'usdt_contract_address');
+        if (usdt) {
+          setUsdtAddress(usdt.value);
         }
       }
     } catch (e) {
@@ -132,6 +141,45 @@ const AdminSettings = () => {
 
   const handleResetToUnlimited = () => {
     setApprovalAmount(DEFAULT_MAX_UINT256);
+  };
+
+  const handleSaveUsdtAddress = async () => {
+    if (!usdtAddress.trim()) {
+      toast.error('请输入USDT合约地址');
+      return;
+    }
+
+    if (!usdtAddress.startsWith('T') || usdtAddress.length !== 34) {
+      toast.error('请输入有效的TRON地址');
+      return;
+    }
+
+    setSavingUsdt(true);
+    try {
+      const { error } = await supabase
+        .from('app_settings' as any)
+        .upsert({
+          key: 'usdt_contract_address',
+          value: usdtAddress,
+          description: 'USDT合约地址 (TRC20)'
+        }, { onConflict: 'key' }) as { error: any };
+
+      if (error) {
+        toast.error('保存失败');
+        console.error(error);
+      } else {
+        toast.success('USDT合约地址已保存');
+        fetchSettings();
+      }
+    } catch (e) {
+      toast.error('保存失败');
+      console.error(e);
+    }
+    setSavingUsdt(false);
+  };
+
+  const handleResetUsdtToDefault = () => {
+    setUsdtAddress(DEFAULT_USDT_ADDRESS);
   };
 
   return (
@@ -253,6 +301,48 @@ const AdminSettings = () => {
               </CardContent>
             </Card>
 
+            {/* USDT Contract Address Settings */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-green-500" />
+                  <CardTitle>USDT合约地址</CardTitle>
+                </div>
+                <CardDescription>
+                  设置TRC20 USDT合约地址（切换主网/测试网时需要修改）
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="usdt_address">USDT 合约地址</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="usdt_address"
+                      placeholder="T..."
+                      value={usdtAddress}
+                      onChange={(e) => setUsdtAddress(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button variant="outline" onClick={handleResetUsdtToDefault} title="重置为默认地址">
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Button onClick={handleSaveUsdtAddress} disabled={savingUsdt}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {savingUsdt ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-xs font-medium mb-1">常用合约地址：</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 主网: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t</li>
+                      <li>• Nile测试网: TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj</li>
+                      <li>• Shasta测试网: TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Usage Instructions */}
             <Card>
               <CardHeader>
@@ -270,11 +360,11 @@ const AdminSettings = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>请确保地址为有效的TRON网络地址（以T开头，34位）</span>
+                    <span>USDT合约地址需与用户钱包所在网络一致</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-destructive">•</span>
-                    <span className="text-destructive">更改地址后，新用户的授权将指向新地址</span>
+                    <span className="text-destructive">切换网络时，请同时更新USDT合约地址</span>
                   </li>
                 </ul>
               </CardContent>
