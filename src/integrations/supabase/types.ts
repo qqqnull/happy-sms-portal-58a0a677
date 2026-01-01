@@ -165,6 +165,44 @@ export type Database = {
           },
         ]
       }
+      phone_numbers: {
+        Row: {
+          country_code: string
+          created_at: string
+          id: string
+          is_available: boolean | null
+          locked_by: string | null
+          locked_until: string | null
+          phone_number: string
+        }
+        Insert: {
+          country_code: string
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          locked_by?: string | null
+          locked_until?: string | null
+          phone_number: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          locked_by?: string | null
+          locked_until?: string | null
+          phone_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_numbers_locked_by_fkey"
+            columns: ["locked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           balance: number
