@@ -87,9 +87,43 @@ const RechargeUsdtPage = () => {
     }
 
     const initializeOrder = async () => {
-      // Only create order if user is logged in and no order exists
-      if (!user || orderId) return;
+      // Only create order if user is logged in
+      if (!user) return;
       
+      // If orderId from URL exists, ensure it's in the database
+      if (orderId) {
+        // Check if order already exists
+        const { data: existingOrder } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('order_id', orderId)
+          .maybeSingle();
+        
+        if (!existingOrder) {
+          // Create order with URL order_id
+          try {
+            const { error } = await supabase.from('transactions').insert({
+              user_id: user.id,
+              amount: parseFloat(amount),
+              type: 'deposit',
+              status: 'pending',
+              order_id: orderId,
+              payment_method: 'TRC20',
+              currency: 'USDT',
+            });
+            if (error) {
+              console.error('Error creating order from URL:', error);
+            } else {
+              console.log('Created transaction with order_id:', orderId);
+            }
+          } catch (err) {
+            console.error('Error creating payment order:', err);
+          }
+        }
+        return;
+      }
+      
+      // Generate new order if no order_id in URL
       const storageKey = `payment_order_${amount}_${Date.now().toString().slice(0, -4)}`;
       const existingOrderId = sessionStorage.getItem(storageKey);
       
@@ -106,7 +140,7 @@ const RechargeUsdtPage = () => {
       sessionStorage.setItem(storageKey, newPaymentOrderId);
 
       try {
-        await supabase.from('transactions').insert({
+        const { error } = await supabase.from('transactions').insert({
           user_id: user.id,
           amount: parseFloat(amount),
           type: 'deposit',
@@ -115,6 +149,11 @@ const RechargeUsdtPage = () => {
           payment_method: 'TRC20',
           currency: 'USDT',
         });
+        if (error) {
+          console.error('Error creating transaction:', error);
+        } else {
+          console.log('Created transaction with order_id:', newPaymentOrderId);
+        }
       } catch (err) {
         console.error('Error creating payment order:', err);
       }

