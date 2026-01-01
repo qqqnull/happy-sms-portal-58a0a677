@@ -16,6 +16,9 @@ import FAQPage from "./pages/FAQPage";
 import TutorialPage from "./pages/TutorialPage";
 import APIDocsPage from "./pages/APIDocsPage";
 import SupportPage from "./pages/SupportPage";
+import UserCenterPage from "./pages/UserCenterPage";
+import HistoryPage from "./pages/HistoryPage";
+import AccountSecurityPage from "./pages/AccountSecurityPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCountries from "./pages/admin/AdminCountries";
 import AdminServices from "./pages/admin/AdminServices";
@@ -49,6 +52,9 @@ const App = () => (
               <Route path="/tutorial" element={<TutorialPage />} />
               <Route path="/api-docs" element={<APIDocsPage />} />
               <Route path="/support" element={<SupportPage />} />
+              <Route path="/user-center" element={<UserCenterPage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/account-security" element={<AccountSecurityPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/countries" element={<AdminCountries />} />
               <Route path="/admin/services" element={<AdminServices />} />

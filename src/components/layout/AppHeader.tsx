@@ -1,6 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, User, LogOut, Wallet } from 'lucide-react';
+import { Shield, User, LogOut, Wallet, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -50,18 +57,41 @@ const AppHeader = () => {
               {t('recharge')}
             </Button>
 
-            {/* User Info - Hidden on mobile */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10">
-              <User className="h-4 w-4" />
-              <span className="text-sm">{profile.username}</span>
-            </div>
+            {/* User Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{profile.username}</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => navigate('/user-center')}>
+                  <User className="h-4 w-4 mr-2 text-primary" />
+                  用户中心
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/recharge')}>
+                  <Wallet className="h-4 w-4 mr-2 text-primary" />
+                  账户充值
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2 text-primary" />
+                  退出登录
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Logout */}
+            {/* Mobile Logout */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="hover:bg-white/10 px-2"
+              className="sm:hidden hover:bg-white/10 px-2"
             >
               <LogOut className="h-4 w-4" />
             </Button>
