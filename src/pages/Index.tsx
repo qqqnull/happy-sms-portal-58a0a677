@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, Globe, CheckCircle, Zap, ArrowLeft, 
@@ -7,7 +7,7 @@ import {
   UserPlus, MapPin, Phone, MessageSquare, LogIn,
   Filter, ArrowUpDown, RefreshCw, Wifi, Star, Menu,
   ChevronLeft, ChevronRight, AlertTriangle, Info, CreditCard, Banknote,
-  Clock, Copy, RotateCcw, Timer
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,14 +95,6 @@ const Index = () => {
   const [refreshingNumbers, setRefreshingNumbers] = useState(false);
   const [countryPage, setCountryPage] = useState(1);
   const [servicePage, setServicePage] = useState(1);
-  
-  // 号码获取相关状态
-  const [acquiredNumber, setAcquiredNumber] = useState<string | null>(null);
-  const [acquiredNumberId, setAcquiredNumberId] = useState<string | null>(null); // 数据库中的号码ID
-  const [lockTimeLeft, setLockTimeLeft] = useState(0); // 锁定时间倒计时（秒）
-  const [isNumberLocked, setIsNumberLocked] = useState(false);
-  const [showGetCodeDialog, setShowGetCodeDialog] = useState(false); // 获取验证码弹窗
-  const [isGettingNumber, setIsGettingNumber] = useState(false); // 获取号码加载状态
   
   const { user, profile } = useAuth();
   const { t, lang } = useLanguage();
@@ -282,234 +274,20 @@ const Index = () => {
     setSelectedPrice(service.specificPrice || 0);
   };
 
-  // 锁定时间倒计时 (30分钟)
-  useEffect(() => {
-    if (!isNumberLocked || lockTimeLeft <= 0) return;
+  // 跳转到接收验证码页面
+  const handleGetNumber = () => {
+    if (!selectedCountry || !selectedService || !user) return;
     
-    const timer = setInterval(() => {
-      setLockTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          // 支付超时，自动释放号码
-          handleReleaseNumber();
-          toast({
-            title: lang === 'zh' ? '号码已释放' : 'Number Released',
-            description: lang === 'zh' ? '支付超时，号码已自动释放' : 'Payment timeout, number has been released',
-            variant: 'destructive',
-          });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isNumberLocked, lockTimeLeft]);
-
-  // 格式化时间显示
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // 从数据库获取手机号并锁定
-  const handleGetNumber = async () => {
-    if (!profile || !selectedCountry || !user) return;
-    
-    if (profile.balance < selectedPrice) {
-      setShowInsufficientDialog(true);
-      return;
-    }
-    
-    setIsGettingNumber(true);
-    
-    try {
-      // 从数据库获取一个可用的手机号
-      const { data: phoneNumber, error: fetchError } = await supabase
-        .from('phone_numbers')
-        .select('*')
-        .eq('country_code', selectedCountry.code)
-        .eq('is_available', true)
-        .is('locked_by', null)
-        .limit(1)
-        .maybeSingle();
-      
-      if (fetchError) {
-        throw fetchError;
-      }
-      
-      if (!phoneNumber) {
-        toast({
-          title: lang === 'zh' ? '暂无可用号码' : 'No Available Numbers',
-          description: lang === 'zh' ? '该国家暂时没有可用的手机号，请稍后再试' : 'No phone numbers available for this country, please try again later',
-          variant: 'destructive',
-        });
-        setIsGettingNumber(false);
-        return;
-      }
-      
-      // 锁定该号码30分钟
-      const lockUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      const { error: updateError } = await supabase
-        .from('phone_numbers')
-        .update({
-          locked_by: user.id,
-          locked_until: lockUntil,
-          is_available: false,
-        })
-        .eq('id', phoneNumber.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setAcquiredNumber(phoneNumber.phone_number);
-      setAcquiredNumberId(phoneNumber.id);
-      setIsNumberLocked(true);
-      setLockTimeLeft(30 * 60); // 30分钟锁定
-      
-      toast({
-        title: lang === 'zh' ? '号码获取成功' : 'Number Acquired',
-        description: lang === 'zh' ? `已为您分配号码: ${phoneNumber.phone_number}` : `Assigned number: ${phoneNumber.phone_number}`,
-      });
-    } catch (error) {
-      console.error('Error getting phone number:', error);
-      toast({
-        title: lang === 'zh' ? '获取失败' : 'Failed to Get Number',
-        description: lang === 'zh' ? '获取手机号失败，请稍后重试' : 'Failed to get phone number, please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGettingNumber(false);
-    }
-  };
-
-  // 释放当前号码
-  const handleReleaseNumber = useCallback(async () => {
-    if (acquiredNumberId && user) {
-      try {
-        await supabase
-          .from('phone_numbers')
-          .update({
-            locked_by: null,
-            locked_until: null,
-            is_available: true,
-          })
-          .eq('id', acquiredNumberId);
-      } catch (error) {
-        console.error('Error releasing phone number:', error);
-      }
-    }
-    
-    setAcquiredNumber(null);
-    setAcquiredNumberId(null);
-    setIsNumberLocked(false);
-    setLockTimeLeft(0);
-  }, [acquiredNumberId, user]);
-
-  // 更换号码
-  const handleChangeNumber = async () => {
-    if (!selectedCountry || !user) return;
-    
-    setIsGettingNumber(true);
-    
-    try {
-      // 先释放当前号码
-      if (acquiredNumberId) {
-        await supabase
-          .from('phone_numbers')
-          .update({
-            locked_by: null,
-            locked_until: null,
-            is_available: true,
-          })
-          .eq('id', acquiredNumberId);
-      }
-      
-      // 获取新号码（排除刚刚释放的号码）
-      const { data: newPhoneNumber, error: fetchError } = await supabase
-        .from('phone_numbers')
-        .select('*')
-        .eq('country_code', selectedCountry.code)
-        .eq('is_available', true)
-        .is('locked_by', null)
-        .neq('id', acquiredNumberId || '')
-        .limit(1)
-        .maybeSingle();
-      
-      if (fetchError) {
-        throw fetchError;
-      }
-      
-      if (!newPhoneNumber) {
-        toast({
-          title: lang === 'zh' ? '暂无其他可用号码' : 'No Other Numbers Available',
-          description: lang === 'zh' ? '该国家暂时没有其他可用的手机号' : 'No other phone numbers available for this country',
-          variant: 'destructive',
-        });
-        setIsGettingNumber(false);
-        return;
-      }
-      
-      // 锁定新号码30分钟
-      const lockUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      const { error: updateError } = await supabase
-        .from('phone_numbers')
-        .update({
-          locked_by: user.id,
-          locked_until: lockUntil,
-          is_available: false,
-        })
-        .eq('id', newPhoneNumber.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setAcquiredNumber(newPhoneNumber.phone_number);
-      setAcquiredNumberId(newPhoneNumber.id);
-      setLockTimeLeft(30 * 60); // 重置30分钟锁定时间
-      
-      toast({
-        title: lang === 'zh' ? '已更换号码' : 'Number Changed',
-        description: lang === 'zh' ? `新号码: ${newPhoneNumber.phone_number}` : `New number: ${newPhoneNumber.phone_number}`,
-      });
-    } catch (error) {
-      console.error('Error changing phone number:', error);
-      toast({
-        title: lang === 'zh' ? '更换失败' : 'Failed to Change',
-        description: lang === 'zh' ? '更换手机号失败，请稍后重试' : 'Failed to change phone number, please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGettingNumber(false);
-    }
-  };
-
-  const handleGetVerificationCode = () => {
-    if (!profile) return;
-    
-    if (profile.balance < selectedPrice) {
-      setShowGetCodeDialog(true);
-      return;
-    }
-    
-    // 余额足够，进行验证码获取逻辑
-    toast({
-      title: lang === 'zh' ? '正在获取验证码' : 'Getting Verification Code',
-      description: lang === 'zh' ? '请稍候...' : 'Please wait...',
+    // 直接跳转到接收验证码页面，不管余额
+    const params = new URLSearchParams({
+      country: selectedCountry.code,
+      countryName: lang === 'zh' ? selectedCountry.name : selectedCountry.name_en,
+      service: selectedService.name,
+      serviceId: selectedService.id,
+      price: selectedPrice.toString(),
     });
-  };
-
-  const copyPhoneNumber = () => {
-    if (acquiredNumber) {
-      navigator.clipboard.writeText(acquiredNumber);
-      toast({
-        title: lang === 'zh' ? '已复制' : 'Copied',
-        description: lang === 'zh' ? '号码已复制到剪贴板' : 'Number copied to clipboard',
-      });
-    }
+    
+    navigate(`/receive-code?${params.toString()}`);
   };
 
   const handleBack = () => {
@@ -517,8 +295,6 @@ const Index = () => {
     setSelectedService(null);
     setCountryServices([]);
     setServiceSearchQuery('');
-    // 重置号码相关状态
-    handleReleaseNumber();
   };
 
   const navItems = [
@@ -1163,8 +939,8 @@ const Index = () => {
                     </div>
                   )}
 
-                  {/* Get Number Button or Number Display */}
-                  {selectedService && !acquiredNumber && (
+                  {/* Get Number Button */}
+                  {selectedService && (
                     <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-secondary/10 to-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                       <div>
                         <div className="text-xs sm:text-sm text-muted-foreground mb-1 flex items-center gap-2">
@@ -1186,136 +962,10 @@ const Index = () => {
                         size="lg"
                         className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-base sm:text-lg px-6 sm:px-8 shadow-lg"
                         onClick={handleGetNumber}
-                        disabled={isGettingNumber}
                       >
-                        {isGettingNumber ? (
-                          <>
-                            <div className="h-5 w-5 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            {lang === 'zh' ? '获取中...' : 'Getting...'}
-                          </>
-                        ) : (
-                          <>
-                            <Phone className="h-5 w-5 mr-2" />
-                            {t('getNumberBtn')}
-                          </>
-                        )}
+                        <Phone className="h-5 w-5 mr-2" />
+                        {t('getNumberBtn')}
                       </Button>
-                    </div>
-                  )}
-
-                  {/* Acquired Number Display */}
-                  {selectedService && acquiredNumber && (
-                    <div className="mt-4 sm:mt-6 space-y-4">
-                      {/* Number Display Card */}
-                      <div className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-secondary/10 via-accent/5 to-success/10 border border-secondary/20">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
-                              <CheckCircle className="h-5 w-5 text-success" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-foreground">
-                                {lang === 'zh' ? '号码获取成功' : 'Number Acquired'}
-                              </h3>
-                              <p className="text-xs text-muted-foreground">
-                                {lang === 'zh' ? selectedCountry.name : selectedCountry.name_en} · {selectedService.name}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-bold text-accent">￥{selectedPrice.toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        {/* Phone Number */}
-                        <div className="bg-card rounded-xl p-4 mb-4 border border-border">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">
-                                {lang === 'zh' ? '您的接码号码' : 'Your Number'}
-                              </p>
-                              <p className="text-2xl sm:text-3xl font-bold text-foreground tracking-wider">
-                                {acquiredNumber}
-                              </p>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={copyPhoneNumber}
-                              className="flex-shrink-0"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Timer Display */}
-                        <div className="bg-card rounded-lg p-3 border border-border mb-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Lock className="h-4 w-4 text-warning" />
-                              <span className="text-sm text-muted-foreground">
-                                {lang === 'zh' ? '号码锁定剩余时间' : 'Number Lock Time Remaining'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Timer className="h-5 w-5 text-destructive" />
-                              <span className={`text-xl font-bold ${lockTimeLeft < 300 ? 'text-destructive animate-pulse' : 'text-warning'}`}>
-                                {formatTime(lockTimeLeft)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Warning Message */}
-                        <div className="bg-warning/10 rounded-lg p-3 mb-4">
-                          <div className="flex items-start gap-2">
-                            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-warning">
-                                {lang === 'zh' ? '重要提示' : 'Important'}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {lang === 'zh' 
-                                  ? '请在30分钟内完成支付，否则号码将自动释放。如需更换号码请点击下方按钮。'
-                                  : 'Please complete payment within 30 minutes, otherwise the number will be released. Click below to change number.'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={handleChangeNumber}
-                            disabled={isGettingNumber}
-                          >
-                            {isGettingNumber ? (
-                              <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            ) : (
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                            )}
-                            {lang === 'zh' ? '更换号码' : 'Change Number'}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="flex-1 text-destructive hover:text-destructive"
-                            onClick={handleReleaseNumber}
-                          >
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            {lang === 'zh' ? '释放号码' : 'Release Number'}
-                          </Button>
-                          <Button
-                            className="flex-1 bg-success hover:bg-success/90"
-                            onClick={handleGetVerificationCode}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            {lang === 'zh' ? '获取验证码' : 'Get Code'}
-                          </Button>
-                        </div>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -1421,129 +1071,6 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Get Verification Code - Insufficient Balance Dialog */}
-      <Dialog open={showGetCodeDialog} onOpenChange={setShowGetCodeDialog}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0 border-0 [&>button]:text-primary-foreground [&>button]:hover:text-primary-foreground/80">
-          {/* Header */}
-          <div className="bg-destructive px-6 py-4 flex items-center gap-3 pr-12">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5 text-destructive-foreground" />
-            </div>
-            <DialogTitle className="text-destructive-foreground text-lg m-0">
-              {lang === 'zh' ? '余额不足' : 'Insufficient Balance'}
-            </DialogTitle>
-          </div>
-          
-          <div className="p-6">
-            {/* Current Balance Display */}
-            <div className="bg-muted rounded-xl p-4 mb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {lang === 'zh' ? '当前余额' : 'Current Balance'}
-                  </p>
-                  <p className="text-2xl font-bold text-foreground">
-                    ￥{profile?.balance?.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">
-                    {lang === 'zh' ? '需要支付' : 'Required'}
-                  </p>
-                  <p className="text-2xl font-bold text-destructive">
-                    ￥{selectedPrice.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-border">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {lang === 'zh' ? '差额' : 'Difference'}
-                  </span>
-                  <span className="font-semibold text-destructive">
-                    ￥{Math.max(0, selectedPrice - (profile?.balance || 0)).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Warning Message */}
-            <div className="flex items-start gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
-                <Clock className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">
-                  {lang === 'zh' ? '号码锁定中' : 'Number is Locked'}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {lang === 'zh' 
-                    ? `您的号码将在 ${formatTime(lockTimeLeft)} 后自动释放，请尽快完成充值！`
-                    : `Your number will be released in ${formatTime(lockTimeLeft)}, please recharge soon!`}
-                </p>
-              </div>
-            </div>
-            
-            {/* Urgency Alert */}
-            <div className="bg-destructive/10 rounded-lg p-4 mb-5 border border-destructive/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Timer className="h-5 w-5 text-destructive animate-pulse" />
-                <span className="font-bold text-destructive">
-                  {lang === 'zh' ? '紧急提醒！' : 'Urgent Reminder!'}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {lang === 'zh' 
-                  ? '如果支付超时，当前号码将被释放，您需要重新获取新号码。为避免错失此号码，请立即充值。'
-                  : 'If payment times out, the number will be released and you need to get a new one. Recharge now to keep this number.'}
-              </p>
-            </div>
-            
-            {/* Quick Recharge Amounts */}
-            <div className="mb-5">
-              <p className="text-sm font-medium text-foreground mb-3">
-                {lang === 'zh' ? '推荐充值金额' : 'Recommended Amount'}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[10, 50, 100].map((amount) => (
-                  <Button
-                    key={amount}
-                    variant="outline"
-                    className="h-12 text-lg font-semibold hover:border-secondary hover:bg-secondary/5"
-                    onClick={() => {
-                      setShowGetCodeDialog(false);
-                      navigate(`/recharge?amount=${amount}`);
-                    }}
-                  >
-                    ￥{amount}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setShowGetCodeDialog(false)}
-              >
-                {lang === 'zh' ? '返回' : 'Back'}
-              </Button>
-              <Button 
-                className="flex-1 bg-success hover:bg-success/90"
-                onClick={() => {
-                  setShowGetCodeDialog(false);
-                  navigate('/recharge');
-                }}
-              >
-                <Banknote className="h-4 w-4 mr-2" />
-                {lang === 'zh' ? '立即充值' : 'Recharge Now'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
