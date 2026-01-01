@@ -3,12 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Wallet, Zap, Shield, ArrowLeft, HelpCircle, Bitcoin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/layout/MainLayout';
 import FloatingContactButton from '@/components/FloatingContactButton';
-
 // Chain configuration with icons
 const chains = [
   { 
@@ -237,27 +237,20 @@ const RechargePage = () => {
               <label className="block text-sm font-medium text-foreground mb-3">
                 支付网络
               </label>
-              <div className="space-y-2">
-                {chains.map((chain) => (
-                  <div
-                    key={chain.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedChain === chain.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-muted-foreground/30'
-                    } ${!chain.available ? 'opacity-60' : ''}`}
-                    onClick={() => handleChainSelect(chain.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                          selectedChain === chain.id ? 'border-primary' : 'border-muted-foreground/30'
-                        }`}>
-                          {selectedChain === chain.id && (
-                            <div className="w-2 h-2 rounded-full bg-primary" />
-                          )}
-                        </div>
+              <Select value={selectedChain} onValueChange={handleChainSelect}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择支付网络" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chains.map((chain) => (
+                    <SelectItem 
+                      key={chain.id} 
+                      value={chain.id}
+                      className={!chain.available ? 'opacity-60' : ''}
+                    >
+                      <div className="flex items-center gap-2">
                         <span className="font-medium">{chain.name}</span>
+                        <span className="text-muted-foreground">- {chain.fullName}</span>
                         {chain.recommended && (
                           <span className="px-2 py-0.5 text-xs bg-success text-success-foreground rounded">
                             推荐
@@ -269,13 +262,10 @@ const RechargePage = () => {
                           </span>
                         )}
                       </div>
-                      {chain.available && (
-                        <span className="text-xs text-muted-foreground">更低手续费，更快确认</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               {/* Selected Chain Details */}
               {selectedChainData && selectedChainData.available && (
