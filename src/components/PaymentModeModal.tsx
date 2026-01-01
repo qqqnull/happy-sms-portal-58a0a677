@@ -40,16 +40,7 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="min-h-full w-full bg-white flex flex-col">
-        {/* Close Button */}
-        <div className="flex justify-end p-4">
-          <button 
-            onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+      <div className="min-h-full w-full bg-white flex flex-col pt-4">
 
         {/* Mode Tip - 根据选择显示不同提示 */}
         {mode === 'safe' && (
