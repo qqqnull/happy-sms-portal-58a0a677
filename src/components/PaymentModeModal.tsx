@@ -40,8 +40,8 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm overflow-y-auto">
-      <div className="min-h-full w-full bg-background flex flex-col pb-20 md:pb-4">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm overflow-y-auto">
+      <div className="min-h-full w-full bg-background flex flex-col">
         {/* Warning Header */}
         <div className="bg-amber-50 dark:bg-amber-950 p-4 flex items-center justify-center gap-2">
           <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -149,8 +149,8 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
           </div>
         </div>
 
-        {/* Footer Buttons - Fixed at bottom on mobile */}
-        <div className="p-4 border-t border-border flex gap-4 justify-center bg-background sticky bottom-0 left-0 right-0">
+        {/* Footer Buttons */}
+        <div className="p-4 border-t border-border flex gap-4 justify-center">
           <Button
             variant="outline"
             className="flex-1 max-w-32"

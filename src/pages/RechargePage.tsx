@@ -70,7 +70,7 @@ const chains = [
 ];
 
 const RechargePage = () => {
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(5);
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(50);
   const [customAmount, setCustomAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('trc20');
   const { user, profile } = useAuth();

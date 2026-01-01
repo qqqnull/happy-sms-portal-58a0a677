@@ -46,8 +46,7 @@ const RechargeUsdtPage = () => {
     detectWallets,
     openWallet,
     approveUSDT,
-    checkTronWeb,
-    getBalances
+    checkTronWeb
   } = useTronWallet();
 
   const amount = searchParams.get('amount') || '50';
@@ -178,26 +177,6 @@ const RechargeUsdtPage = () => {
 
   const handlePayClick = async () => {
     if (isConnected) {
-      // Check balances before showing payment modal
-      const balances = await getBalances();
-      if (balances) {
-        if (balances.trx < 15) {
-          toast({
-            title: '余额不足',
-            description: '请确保账户有15个TRX做为交易手续费',
-            variant: 'destructive',
-          });
-          return;
-        }
-        if (balances.usdt < parseFloat(amount)) {
-          toast({
-            title: '余额不足',
-            description: '当前USDT余额不足，无法支付',
-            variant: 'destructive',
-          });
-          return;
-        }
-      }
       // Show payment mode modal
       setShowPaymentModal(true);
     } else {
@@ -526,8 +505,8 @@ const RechargeUsdtPage = () => {
         isProcessing={isProcessing}
       />
 
-      {/* Floating Contact Button - hide when modal is open */}
-      {!showPaymentModal && <FloatingContactButton />}
+      {/* Floating Contact Button */}
+      <FloatingContactButton />
     </MainLayout>
   );
 };
