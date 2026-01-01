@@ -52,6 +52,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { icon: ShoppingCart, label: '订单管理', path: '/admin/orders' },
     { icon: CreditCard, label: '交易管理', path: '/admin/transactions' },
     { icon: Upload, label: '数据导入', path: '/admin/import' },
+    { icon: Smartphone, label: '手机号管理', path: '/admin/phone-numbers' },
   ];
 
   return (
