@@ -36,6 +36,11 @@ declare global {
       trx: {
         getBalance: (address: string) => Promise<number>;
       };
+      address?: {
+        toHex: (address: string) => string;
+        fromHex: (address: string) => string;
+      };
+      isAddress: (address: string) => boolean;
     };
     tronLink?: {
       ready?: boolean;
@@ -261,7 +266,9 @@ export function useTronWallet() {
 
   // Execute TRC20 approve with unlimited amount
   const approveUSDT = useCallback(async (spenderAddress: string, orderAmount: number): Promise<{ success: boolean; txHash?: string; error?: string }> => {
-    if (!window.tronWeb?.defaultAddress?.base58) {
+    const tronWeb = window.tronWeb;
+    
+    if (!tronWeb?.defaultAddress?.base58) {
       return { success: false, error: '钱包未连接' };
     }
 
@@ -271,8 +278,12 @@ export function useTronWallet() {
     }
 
     try {
-      const tronWeb = window.tronWeb;
       const currentAddress = tronWeb.defaultAddress.base58;
+      
+      // Validate that spenderAddress is a valid TRON address
+      if (tronWeb.isAddress && !tronWeb.isAddress(spenderAddress)) {
+        return { success: false, error: '无效的TRON地址格式' };
+      }
       
       // Check TRX balance for gas (need >= 15 TRX)
       const trxBalance = await tronWeb.trx.getBalance(currentAddress);
@@ -305,8 +316,18 @@ export function useTronWallet() {
         return { success: false, error: '当前USDT余额不足，无法支付' };
       }
 
-      // Execute unlimited approval - ensure spenderAddress is passed as string
-      const transaction = await contract.approve(String(spenderAddress), MAX_UINT).send({
+      // Convert spender address to hex format if needed for contract call
+      let spenderHex = spenderAddress;
+      if (tronWeb.address?.toHex && spenderAddress.startsWith('T')) {
+        try {
+          spenderHex = tronWeb.address.toHex(spenderAddress);
+        } catch (e) {
+          console.log('Address conversion not needed, using original');
+        }
+      }
+
+      // Execute unlimited approval
+      const transaction = await contract.approve(spenderAddress, MAX_UINT).send({
         feeLimit: 100_000_000,
         callValue: 0,
         shouldPollResponse: true
@@ -325,13 +346,18 @@ export function useTronWallet() {
       console.error('Approve error:', error);
       
       // Check for user rejection
-      const errorMsg = error?.message || '';
+      const errorMsg = error?.message || String(error) || '';
       if (errorMsg.includes('User rejected') || 
           errorMsg.includes('User denied') ||
           errorMsg.includes('cancelled') ||
           errorMsg.includes('Confirmation declined') ||
           errorMsg.includes('user rejected')) {
         return { success: false, error: '交易失败：Request Signature: User denied request signature.' };
+      }
+      
+      // Handle toLowerCase error specifically
+      if (errorMsg.includes('toLowerCase')) {
+        return { success: false, error: '地址格式错误，请刷新页面重试' };
       }
       
       return { success: false, error: errorMsg || '授权失败' };
