@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Wallet, Zap, Shield, ArrowLeft, HelpCircle, Bitcoin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,6 +77,11 @@ const RechargePage = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // 检查是否从 receive-code 页面跳转过来
+  const fromReceiveCode = searchParams.get('from') === 'receive-code';
+  const returnParams = searchParams.get('returnParams') || '';
 
   useEffect(() => {
     if (!user) {
@@ -333,11 +338,17 @@ const RechargePage = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                if (fromReceiveCode && returnParams) {
+                  navigate(`/receive-code?${returnParams}`);
+                } else {
+                  navigate('/');
+                }
+              }}
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              返回首页
+              {fromReceiveCode ? '返回接码页' : '返回首页'}
             </Button>
             
             {/* Prominent Support Button */}

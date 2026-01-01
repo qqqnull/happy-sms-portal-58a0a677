@@ -61,6 +61,32 @@ const ReceiveCodePage = () => {
     setIsLoading(true);
     
     try {
+      // 首先检查用户是否已经有锁定的号码
+      const { data: existingLock, error: lockError } = await supabase
+        .from('phone_numbers')
+        .select('*')
+        .eq('country_code', countryCode)
+        .eq('locked_by', user.id)
+        .gt('locked_until', new Date().toISOString())
+        .limit(1)
+        .maybeSingle();
+      
+      if (lockError) throw lockError;
+      
+      // 如果已有锁定的号码，使用现有号码并计算剩余时间
+      if (existingLock) {
+        const lockedUntil = new Date(existingLock.locked_until!).getTime();
+        const now = Date.now();
+        const remainingSeconds = Math.max(0, Math.floor((lockedUntil - now) / 1000));
+        
+        setPhoneNumber(existingLock.phone_number);
+        setPhoneNumberId(existingLock.id);
+        setLockTimeLeft(remainingSeconds);
+        setIsLoading(false);
+        return;
+      }
+      
+      // 没有现有锁定，获取新号码
       const { data: phone, error } = await supabase
         .from('phone_numbers')
         .select('*')
@@ -499,7 +525,21 @@ const ReceiveCodePage = () => {
             <Button variant="outline" onClick={() => setShowInsufficientDialog(false)}>
               {lang === 'zh' ? '稍后再说' : 'Later'}
             </Button>
-            <Button onClick={() => navigate('/recharge')} className="gap-2">
+            <Button 
+              onClick={() => {
+                setShowInsufficientDialog(false);
+                // 传递参数以便返回时恢复状态
+                const returnParams = new URLSearchParams({
+                  country: countryCode,
+                  countryName,
+                  service: serviceName,
+                  serviceId,
+                  price: price.toString(),
+                }).toString();
+                navigate(`/recharge?from=receive-code&returnParams=${encodeURIComponent(returnParams)}`);
+              }} 
+              className="gap-2"
+            >
               <CreditCard className="h-4 w-4" />
               {lang === 'zh' ? '立即充值' : 'Recharge Now'}
             </Button>
