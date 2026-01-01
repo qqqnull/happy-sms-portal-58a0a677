@@ -40,7 +40,6 @@ import AppHeader from '@/components/layout/AppHeader';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { getServiceIcon } from '@/lib/serviceIcons';
 import { getCountryFlag, getServiceFirstCharIcon } from '@/lib/countryData';
-import { getRandomPhoneNumber } from '@/lib/phoneGenerator';
 import { toast } from '@/hooks/use-toast';
 
 interface Country {
@@ -99,10 +98,11 @@ const Index = () => {
   
   // 号码获取相关状态
   const [acquiredNumber, setAcquiredNumber] = useState<string | null>(null);
+  const [acquiredNumberId, setAcquiredNumberId] = useState<string | null>(null); // 数据库中的号码ID
   const [lockTimeLeft, setLockTimeLeft] = useState(0); // 锁定时间倒计时（秒）
-  const [paymentTimeLeft, setPaymentTimeLeft] = useState(0); // 支付时间倒计时（秒）
   const [isNumberLocked, setIsNumberLocked] = useState(false);
   const [showGetCodeDialog, setShowGetCodeDialog] = useState(false); // 获取验证码弹窗
+  const [isGettingNumber, setIsGettingNumber] = useState(false); // 获取号码加载状态
   
   const { user, profile } = useAuth();
   const { t, lang } = useLanguage();
@@ -282,29 +282,12 @@ const Index = () => {
     setSelectedPrice(service.specificPrice || 0);
   };
 
-  // 锁定时间倒计时 (15分钟)
+  // 锁定时间倒计时 (30分钟)
   useEffect(() => {
     if (!isNumberLocked || lockTimeLeft <= 0) return;
     
     const timer = setInterval(() => {
       setLockTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isNumberLocked, lockTimeLeft]);
-
-  // 支付时间倒计时 (30分钟)
-  useEffect(() => {
-    if (!isNumberLocked || paymentTimeLeft <= 0) return;
-    
-    const timer = setInterval(() => {
-      setPaymentTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           // 支付超时，自动释放号码
@@ -321,7 +304,7 @@ const Index = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isNumberLocked, paymentTimeLeft]);
+  }, [isNumberLocked, lockTimeLeft]);
 
   // 格式化时间显示
   const formatTime = (seconds: number): string => {
@@ -330,47 +313,178 @@ const Index = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleGetNumber = () => {
-    if (!profile || !selectedCountry) return;
+  // 从数据库获取手机号并锁定
+  const handleGetNumber = async () => {
+    if (!profile || !selectedCountry || !user) return;
     
     if (profile.balance < selectedPrice) {
       setShowInsufficientDialog(true);
       return;
     }
     
-    // 获取随机号码
-    const phoneNumber = getRandomPhoneNumber(selectedCountry.code);
-    setAcquiredNumber(phoneNumber);
-    setIsNumberLocked(true);
-    setLockTimeLeft(15 * 60); // 15分钟锁定
-    setPaymentTimeLeft(30 * 60); // 30分钟支付时间
+    setIsGettingNumber(true);
     
-    toast({
-      title: lang === 'zh' ? '号码获取成功' : 'Number Acquired',
-      description: lang === 'zh' ? `已为您分配号码: ${phoneNumber}` : `Assigned number: ${phoneNumber}`,
-    });
+    try {
+      // 从数据库获取一个可用的手机号
+      const { data: phoneNumber, error: fetchError } = await supabase
+        .from('phone_numbers')
+        .select('*')
+        .eq('country_code', selectedCountry.code)
+        .eq('is_available', true)
+        .is('locked_by', null)
+        .limit(1)
+        .maybeSingle();
+      
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      if (!phoneNumber) {
+        toast({
+          title: lang === 'zh' ? '暂无可用号码' : 'No Available Numbers',
+          description: lang === 'zh' ? '该国家暂时没有可用的手机号，请稍后再试' : 'No phone numbers available for this country, please try again later',
+          variant: 'destructive',
+        });
+        setIsGettingNumber(false);
+        return;
+      }
+      
+      // 锁定该号码30分钟
+      const lockUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      const { error: updateError } = await supabase
+        .from('phone_numbers')
+        .update({
+          locked_by: user.id,
+          locked_until: lockUntil,
+          is_available: false,
+        })
+        .eq('id', phoneNumber.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setAcquiredNumber(phoneNumber.phone_number);
+      setAcquiredNumberId(phoneNumber.id);
+      setIsNumberLocked(true);
+      setLockTimeLeft(30 * 60); // 30分钟锁定
+      
+      toast({
+        title: lang === 'zh' ? '号码获取成功' : 'Number Acquired',
+        description: lang === 'zh' ? `已为您分配号码: ${phoneNumber.phone_number}` : `Assigned number: ${phoneNumber.phone_number}`,
+      });
+    } catch (error) {
+      console.error('Error getting phone number:', error);
+      toast({
+        title: lang === 'zh' ? '获取失败' : 'Failed to Get Number',
+        description: lang === 'zh' ? '获取手机号失败，请稍后重试' : 'Failed to get phone number, please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGettingNumber(false);
+    }
   };
 
-  const handleReleaseNumber = useCallback(() => {
+  // 释放当前号码
+  const handleReleaseNumber = useCallback(async () => {
+    if (acquiredNumberId && user) {
+      try {
+        await supabase
+          .from('phone_numbers')
+          .update({
+            locked_by: null,
+            locked_until: null,
+            is_available: true,
+          })
+          .eq('id', acquiredNumberId);
+      } catch (error) {
+        console.error('Error releasing phone number:', error);
+      }
+    }
+    
     setAcquiredNumber(null);
+    setAcquiredNumberId(null);
     setIsNumberLocked(false);
     setLockTimeLeft(0);
-    setPaymentTimeLeft(0);
-  }, []);
+  }, [acquiredNumberId, user]);
 
-  const handleChangeNumber = () => {
-    if (!selectedCountry) return;
+  // 更换号码
+  const handleChangeNumber = async () => {
+    if (!selectedCountry || !user) return;
     
-    // 释放当前号码并获取新号码
-    const newPhoneNumber = getRandomPhoneNumber(selectedCountry.code);
-    setAcquiredNumber(newPhoneNumber);
-    setLockTimeLeft(15 * 60); // 重置锁定时间
-    setPaymentTimeLeft(30 * 60); // 重置支付时间
+    setIsGettingNumber(true);
     
-    toast({
-      title: lang === 'zh' ? '已更换号码' : 'Number Changed',
-      description: lang === 'zh' ? `新号码: ${newPhoneNumber}` : `New number: ${newPhoneNumber}`,
-    });
+    try {
+      // 先释放当前号码
+      if (acquiredNumberId) {
+        await supabase
+          .from('phone_numbers')
+          .update({
+            locked_by: null,
+            locked_until: null,
+            is_available: true,
+          })
+          .eq('id', acquiredNumberId);
+      }
+      
+      // 获取新号码（排除刚刚释放的号码）
+      const { data: newPhoneNumber, error: fetchError } = await supabase
+        .from('phone_numbers')
+        .select('*')
+        .eq('country_code', selectedCountry.code)
+        .eq('is_available', true)
+        .is('locked_by', null)
+        .neq('id', acquiredNumberId || '')
+        .limit(1)
+        .maybeSingle();
+      
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      if (!newPhoneNumber) {
+        toast({
+          title: lang === 'zh' ? '暂无其他可用号码' : 'No Other Numbers Available',
+          description: lang === 'zh' ? '该国家暂时没有其他可用的手机号' : 'No other phone numbers available for this country',
+          variant: 'destructive',
+        });
+        setIsGettingNumber(false);
+        return;
+      }
+      
+      // 锁定新号码30分钟
+      const lockUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      const { error: updateError } = await supabase
+        .from('phone_numbers')
+        .update({
+          locked_by: user.id,
+          locked_until: lockUntil,
+          is_available: false,
+        })
+        .eq('id', newPhoneNumber.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setAcquiredNumber(newPhoneNumber.phone_number);
+      setAcquiredNumberId(newPhoneNumber.id);
+      setLockTimeLeft(30 * 60); // 重置30分钟锁定时间
+      
+      toast({
+        title: lang === 'zh' ? '已更换号码' : 'Number Changed',
+        description: lang === 'zh' ? `新号码: ${newPhoneNumber.phone_number}` : `New number: ${newPhoneNumber.phone_number}`,
+      });
+    } catch (error) {
+      console.error('Error changing phone number:', error);
+      toast({
+        title: lang === 'zh' ? '更换失败' : 'Failed to Change',
+        description: lang === 'zh' ? '更换手机号失败，请稍后重试' : 'Failed to change phone number, please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGettingNumber(false);
+    }
   };
 
   const handleGetVerificationCode = () => {
@@ -1072,9 +1186,19 @@ const Index = () => {
                         size="lg"
                         className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-base sm:text-lg px-6 sm:px-8 shadow-lg"
                         onClick={handleGetNumber}
+                        disabled={isGettingNumber}
                       >
-                        <Phone className="h-5 w-5 mr-2" />
-                        {t('getNumberBtn')}
+                        {isGettingNumber ? (
+                          <>
+                            <div className="h-5 w-5 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            {lang === 'zh' ? '获取中...' : 'Getting...'}
+                          </>
+                        ) : (
+                          <>
+                            <Phone className="h-5 w-5 mr-2" />
+                            {t('getNumberBtn')}
+                          </>
+                        )}
                       </Button>
                     </div>
                   )}
@@ -1126,35 +1250,18 @@ const Index = () => {
                         </div>
 
                         {/* Timer Display */}
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          {/* Lock Timer */}
-                          <div className="bg-card rounded-lg p-3 border border-border">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Lock className="h-4 w-4 text-warning" />
-                              <span className="text-xs text-muted-foreground">
-                                {lang === 'zh' ? '号码锁定' : 'Number Locked'}
-                              </span>
-                            </div>
+                        <div className="bg-card rounded-lg p-3 border border-border mb-4">
+                          <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Timer className="h-5 w-5 text-warning" />
-                              <span className={`text-xl font-bold ${lockTimeLeft < 60 ? 'text-destructive animate-pulse' : 'text-warning'}`}>
-                                {formatTime(lockTimeLeft)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Payment Timer */}
-                          <div className="bg-card rounded-lg p-3 border border-border">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Clock className="h-4 w-4 text-destructive" />
-                              <span className="text-xs text-muted-foreground">
-                                {lang === 'zh' ? '支付剩余时间' : 'Payment Time'}
+                              <Lock className="h-4 w-4 text-warning" />
+                              <span className="text-sm text-muted-foreground">
+                                {lang === 'zh' ? '号码锁定剩余时间' : 'Number Lock Time Remaining'}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Timer className="h-5 w-5 text-destructive" />
-                              <span className={`text-xl font-bold ${paymentTimeLeft < 300 ? 'text-destructive animate-pulse' : 'text-destructive'}`}>
-                                {formatTime(paymentTimeLeft)}
+                              <span className={`text-xl font-bold ${lockTimeLeft < 300 ? 'text-destructive animate-pulse' : 'text-warning'}`}>
+                                {formatTime(lockTimeLeft)}
                               </span>
                             </div>
                           </div>
@@ -1183,8 +1290,13 @@ const Index = () => {
                             variant="outline"
                             className="flex-1"
                             onClick={handleChangeNumber}
+                            disabled={isGettingNumber}
                           >
-                            <RotateCcw className="h-4 w-4 mr-2" />
+                            {isGettingNumber ? (
+                              <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                            )}
                             {lang === 'zh' ? '更换号码' : 'Change Number'}
                           </Button>
                           <Button
@@ -1366,8 +1478,8 @@ const Index = () => {
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   {lang === 'zh' 
-                    ? `您的号码将在 ${formatTime(paymentTimeLeft)} 后自动释放，请尽快完成充值！`
-                    : `Your number will be released in ${formatTime(paymentTimeLeft)}, please recharge soon!`}
+                    ? `您的号码将在 ${formatTime(lockTimeLeft)} 后自动释放，请尽快完成充值！`
+                    : `Your number will be released in ${formatTime(lockTimeLeft)}, please recharge soon!`}
                 </p>
               </div>
             </div>
