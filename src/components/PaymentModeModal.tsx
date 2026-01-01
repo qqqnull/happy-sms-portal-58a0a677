@@ -41,19 +41,11 @@ const PaymentModeModal = ({ isOpen, onClose, amount: initialAmount, onConfirm, i
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm overflow-y-auto">
       <div className="min-h-full w-full bg-white flex flex-col">
-        {/* Warning Header - 黄色警告背景 */}
-        <div className="bg-[#fcf6ed] py-3 px-4 flex items-center justify-center relative">
-          <div className="flex items-center gap-2">
-            <img 
-              src="https://mystaticresource.oss-cn-hongkong.aliyuncs.com/img/warning.png" 
-              alt="warning" 
-              className="w-4 h-4 object-contain"
-            />
-            <span className="text-[#dda453] font-medium">警告</span>
-          </div>
+        {/* Close Button */}
+        <div className="flex justify-end p-4">
           <button 
             onClick={onClose} 
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600"
           >
             <X className="h-5 w-5" />
           </button>
