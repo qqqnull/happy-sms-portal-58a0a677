@@ -11,6 +11,7 @@ import RegisterPage from "./pages/RegisterPage";
 import RechargePage from "./pages/RechargePage";
 import RechargeUsdtPage from "./pages/RechargeUsdtPage";
 import OrdersPage from "./pages/OrdersPage";
+import ReceiveCodePage from "./pages/ReceiveCodePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCountries from "./pages/admin/AdminCountries";
 import AdminServices from "./pages/admin/AdminServices";
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/recharge" element={<RechargePage />} />
               <Route path="/recharge_usdt_page" element={<RechargeUsdtPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/receive-code" element={<ReceiveCodePage />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/countries" element={<AdminCountries />} />
               <Route path="/admin/services" element={<AdminServices />} />
