@@ -36,6 +36,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupportLink } from '@/hooks/useSupportLink';
 import AppHeader from '@/components/layout/AppHeader';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { getServiceIcon } from '@/lib/serviceIcons';
@@ -98,6 +99,7 @@ const Index = () => {
   
   const { user, profile } = useAuth();
   const { t, lang } = useLanguage();
+  const { supportLink } = useSupportLink();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -377,7 +379,7 @@ const Index = () => {
         </div>
         <h3 className="font-semibold mb-1">{t('techSupport')}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t('techSupportDesc')}</p>
-        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer" className="block">
+        <a href={supportLink} target="_blank" rel="noopener noreferrer" className="block">
           <Button className="w-full bg-primary hover:bg-primary/90">
             <MessageSquare className="h-4 w-4 mr-2" />
             {t('contactSupport')}

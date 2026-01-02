@@ -3,18 +3,29 @@ import { ArrowLeft, Headphones, MessageCircle, Mail, Clock, ExternalLink } from 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSupportLink } from '@/hooks/useSupportLink';
 
 const SupportPage = () => {
   const { lang } = useLanguage();
+  const { supportLink } = useSupportLink();
   const navigate = useNavigate();
+
+  // Extract username from Telegram link if applicable
+  const getLinkText = () => {
+    if (supportLink.includes('t.me/')) {
+      const username = supportLink.split('t.me/')[1]?.split('?')[0];
+      return username ? `@${username}` : supportLink;
+    }
+    return supportLink;
+  };
 
   const contactMethods = [
     {
       icon: <MessageCircle className="h-8 w-8" />,
       title: lang === 'zh' ? '客服Telegram' : 'Customer Service Telegram',
       description: lang === 'zh' ? '24小时在线服务' : '24/7 Online Service',
-      link: 'https://t.me/kkpifa8',
-      linkText: '@kkpifa8',
+      link: supportLink,
+      linkText: getLinkText(),
       buttonText: lang === 'zh' ? '联系客服' : 'Contact Support',
     },
   ];

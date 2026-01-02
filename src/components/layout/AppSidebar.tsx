@@ -1,13 +1,16 @@
+import { useState, useEffect } from 'react';
 import { Shield, ShieldCheck, Lock, Database, Headphones, History, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { useSupportLink } from '@/hooks/useSupportLink';
 
 const AppSidebar = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { isAdmin } = useAdminCheck();
+  const { supportLink } = useSupportLink();
   const navigate = useNavigate();
 
   const securityBadges = [
@@ -56,7 +59,7 @@ const AppSidebar = () => {
 
       {/* Customer Support */}
       <div className="mt-auto p-4 border-t border-sidebar-border">
-        <a href="https://t.me/support" target="_blank" rel="noopener noreferrer">
+        <a href={supportLink} target="_blank" rel="noopener noreferrer">
           <div className="flex items-center gap-2 px-3 py-3 rounded-md bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors cursor-pointer">
             <Headphones className="h-5 w-5 text-secondary" />
             <div>
