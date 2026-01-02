@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
 
-const FloatingContactButton = () => {
+export const useSupportLink = () => {
   const [supportLink, setSupportLink] = useState(DEFAULT_SUPPORT_LINK);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSupportLink = async () => {
@@ -21,26 +21,13 @@ const FloatingContactButton = () => {
         }
       } catch (e) {
         console.error('Failed to fetch support link:', e);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchSupportLink();
   }, []);
 
-  const handleContact = () => {
-    window.open(supportLink, '_blank');
-  };
-
-  return (
-    <button
-      onClick={handleContact}
-      className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-105 animate-pulse"
-      style={{ animationDuration: '2s' }}
-    >
-      <MessageCircle className="h-5 w-5" />
-      <span className="font-medium">联系客服</span>
-    </button>
-  );
+  return { supportLink, loading };
 };
-
-export default FloatingContactButton;

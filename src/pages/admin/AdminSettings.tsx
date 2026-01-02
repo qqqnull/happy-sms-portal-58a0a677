@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, Settings, Wallet, Coins } from 'lucide-react';
+import { Save, RefreshCw, Settings, Wallet, Coins, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,9 @@ interface AppSetting {
 // Default USDT contract address (Shasta testnet)
 const DEFAULT_USDT_ADDRESS = 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs';
 
+// Default support link
+const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<AppSetting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +33,8 @@ const AdminSettings = () => {
   const [savingApproval, setSavingApproval] = useState(false);
   const [usdtAddress, setUsdtAddress] = useState(DEFAULT_USDT_ADDRESS);
   const [savingUsdt, setSavingUsdt] = useState(false);
+  const [supportLink, setSupportLink] = useState(DEFAULT_SUPPORT_LINK);
+  const [savingSupport, setSavingSupport] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -59,6 +64,10 @@ const AdminSettings = () => {
         const usdt = data.find(s => s.key === 'usdt_contract_address');
         if (usdt) {
           setUsdtAddress(usdt.value);
+        }
+        const support = data.find(s => s.key === 'support_link');
+        if (support) {
+          setSupportLink(support.value);
         }
       }
     } catch (e) {
@@ -180,6 +189,48 @@ const AdminSettings = () => {
 
   const handleResetUsdtToDefault = () => {
     setUsdtAddress(DEFAULT_USDT_ADDRESS);
+  };
+
+  const handleSaveSupportLink = async () => {
+    if (!supportLink.trim()) {
+      toast.error('请输入客服链接');
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(supportLink);
+    } catch {
+      toast.error('请输入有效的URL地址');
+      return;
+    }
+
+    setSavingSupport(true);
+    try {
+      const { error } = await supabase
+        .from('app_settings' as any)
+        .upsert({
+          key: 'support_link',
+          value: supportLink,
+          description: '客服链接'
+        }, { onConflict: 'key' }) as { error: any };
+
+      if (error) {
+        toast.error('保存失败');
+        console.error(error);
+      } else {
+        toast.success('客服链接已保存');
+        fetchSettings();
+      }
+    } catch (e) {
+      toast.error('保存失败');
+      console.error(e);
+    }
+    setSavingSupport(false);
+  };
+
+  const handleResetSupportToDefault = () => {
+    setSupportLink(DEFAULT_SUPPORT_LINK);
   };
 
   return (
@@ -337,6 +388,52 @@ const AdminSettings = () => {
                       <li>• 主网: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t</li>
                       <li>• Nile测试网: TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj</li>
                       <li>• Shasta测试网: TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Support Link Settings */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-blue-500" />
+                  <CardTitle>客服链接设置</CardTitle>
+                </div>
+                <CardDescription>
+                  设置所有页面的客服联系链接（支持 Telegram、微信等任意链接）
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="support_link">客服链接</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="support_link"
+                      placeholder="https://t.me/your_support"
+                      value={supportLink}
+                      onChange={(e) => setSupportLink(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button variant="outline" onClick={handleResetSupportToDefault} title="重置为默认链接">
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Button onClick={handleSaveSupportLink} disabled={savingSupport}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {savingSupport ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    此链接将应用于所有页面的联系客服按钮和链接
+                  </p>
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-xs font-medium mb-1">常用链接格式：</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• Telegram: https://t.me/username</li>
+                      <li>• WhatsApp: https://wa.me/phonenumber</li>
+                      <li>• 微信公众号: weixin://dl/business/?t=xxx</li>
+                      <li>• 网页客服: https://your-support.com</li>
                     </ul>
                   </div>
                 </div>

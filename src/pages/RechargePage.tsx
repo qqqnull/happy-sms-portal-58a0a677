@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSupportLink } from '@/hooks/useSupportLink';
 import MainLayout from '@/components/layout/MainLayout';
 import FloatingContactButton from '@/components/FloatingContactButton';
 // Chain configuration with icons
@@ -76,6 +77,7 @@ const RechargePage = () => {
   const { user, profile } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { supportLink } = useSupportLink();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -138,10 +140,6 @@ const RechargePage = () => {
   };
 
   const selectedChainData = chains.find(c => c.id === selectedChain);
-
-  const handleContactSupport = () => {
-    window.open('https://t.me/support', '_blank');
-  };
 
   return (
     <MainLayout showSidebar={false}>
@@ -343,7 +341,7 @@ const RechargePage = () => {
             
             {/* Prominent Support Button */}
             <a 
-              href="https://t.me/support" 
+              href={supportLink}
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border-2 border-destructive text-destructive rounded-lg hover:bg-destructive/20 transition-colors"
