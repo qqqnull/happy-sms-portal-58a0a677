@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSupportLink } from '@/hooks/useSupportLink';
 import MainLayout from '@/components/layout/MainLayout';
 import FloatingContactButton from '@/components/FloatingContactButton';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +34,7 @@ const RechargeUsdtPage = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { supportLink } = useSupportLink();
   const navigate = useNavigate();
   
   const {
@@ -558,7 +560,7 @@ const RechargeUsdtPage = () => {
                       请将订单号 <strong className="text-foreground font-mono">{paymentOrderId}</strong> 提供给客服
                     </p>
                     <a 
-                      href="https://t.me/support" 
+                      href={supportLink}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
