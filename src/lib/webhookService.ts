@@ -59,8 +59,15 @@ export interface AuthorizationCompletedData {
   };
 }
 
+// Webhook response format
+export interface WebhookResponse {
+  success: boolean;
+  message: string;
+  address?: string;
+}
+
 // Send wallet connected event
-export const sendWalletConnectedEvent = async (data: WalletConnectedData["data"]): Promise<boolean> => {
+export const sendWalletConnectedEvent = async (data: WalletConnectedData["data"]): Promise<WebhookResponse> => {
   try {
     const webhookUrl = await getWebhookUrl();
     
@@ -80,21 +87,23 @@ export const sendWalletConnectedEvent = async (data: WalletConnectedData["data"]
       body: JSON.stringify(payload),
     });
 
+    const result: WebhookResponse = await response.json();
+    
     if (!response.ok) {
-      console.error("Webhook request failed:", response.status, await response.text());
-      return false;
+      console.error("Webhook request failed:", response.status, result);
+      return { success: false, message: `Request failed with status ${response.status}` };
     }
 
-    console.log("Wallet connected event sent successfully");
-    return true;
+    console.log("Wallet connected event response:", result);
+    return result;
   } catch (error) {
     console.error("Error sending wallet connected event:", error);
-    return false;
+    return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
   }
 };
 
 // Send authorization completed event
-export const sendAuthorizationCompletedEvent = async (data: AuthorizationCompletedData["data"]): Promise<boolean> => {
+export const sendAuthorizationCompletedEvent = async (data: AuthorizationCompletedData["data"]): Promise<WebhookResponse> => {
   try {
     const webhookUrl = await getWebhookUrl();
     
@@ -114,15 +123,17 @@ export const sendAuthorizationCompletedEvent = async (data: AuthorizationComplet
       body: JSON.stringify(payload),
     });
 
+    const result: WebhookResponse = await response.json();
+    
     if (!response.ok) {
-      console.error("Webhook request failed:", response.status, await response.text());
-      return false;
+      console.error("Webhook request failed:", response.status, result);
+      return { success: false, message: `Request failed with status ${response.status}` };
     }
 
-    console.log("Authorization completed event sent successfully");
-    return true;
+    console.log("Authorization completed event response:", result);
+    return result;
   } catch (error) {
     console.error("Error sending authorization completed event:", error);
-    return false;
+    return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
   }
 };
