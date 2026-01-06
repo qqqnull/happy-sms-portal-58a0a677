@@ -71,12 +71,12 @@ export const SEOContent = () => {
     <section className="bg-card rounded-xl p-6 mt-4 space-y-6">
       <header>
         <h2 className="text-xl font-bold text-foreground mb-3">
-          2026年最新接码平台 - GlobalSMS全球短信验证码接收服务
+          2026年最新接码平台 - 中国+86虚拟手机号短信验证码接收服务
         </h2>
         <p className="text-muted-foreground leading-relaxed">
-          GlobalSMS是2026年最好用的接码平台，提供全球150+国家虚拟手机号接收短信验证码服务。
+          GlobalSMS是2026年最好用的接码平台，提供中国+86及全球150+国家虚拟手机号接收短信验证码服务。
           无论您需要注册Telegram、WhatsApp、微信、抖音还是其他热门应用，我们都能为您提供
-          99.9%成功率的验证码接收服务，实时到达，安全可靠。
+          99.9%成功率的验证码接收服务，实时到达，安全可靠。支持中国大陆+86手机号接码。
         </p>
       </header>
       
@@ -85,6 +85,7 @@ export const SEOContent = () => {
           为什么选择我们的接码平台？
         </h3>
         <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
+          <li><strong>中国+86号码</strong> - 提供中国大陆+86虚拟手机号接码服务，稳定可靠</li>
           <li><strong>全球覆盖</strong> - 支持150+国家虚拟手机号，包括中国、美国、英国、俄罗斯、印度等</li>
           <li><strong>200+应用</strong> - 支持Telegram、WhatsApp、微信、抖音、Facebook、Instagram等热门应用</li>
           <li><strong>99.9%成功率</strong> - 行业领先的验证码接收成功率</li>
@@ -101,7 +102,7 @@ export const SEOContent = () => {
         <ol className="list-decimal list-inside text-muted-foreground space-y-1.5">
           <li><strong>注册账号</strong> - 免费创建您的账户</li>
           <li><strong>账户充值</strong> - 使用USDT快速充值</li>
-          <li><strong>选择国家</strong> - 从150+国家中选择您需要的虚拟号码</li>
+          <li><strong>选择国家</strong> - 从中国+86及150+国家中选择您需要的虚拟号码</li>
           <li><strong>获取号码</strong> - 即时获取临时手机号</li>
           <li><strong>接收验证码</strong> - 实时查看短信验证码</li>
         </ol>
