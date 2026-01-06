@@ -13,9 +13,9 @@ interface SEOHeadProps {
 const seoData: Record<string, { zh: { title: string; description: string; keywords: string }, en: { title: string; description: string; keywords: string } }> = {
   '/': {
     zh: {
-      title: '2026年最新接码平台 - 全球短信验证码接收平台 | GlobalSMS',
-      description: '2026年最新最好用的接码平台，提供全球150+国家虚拟手机号接收短信验证码服务。支持Telegram、WhatsApp、微信、抖音等200+热门应用，成功率99.9%。',
-      keywords: '接码平台,2026接码平台,短信验证码,虚拟手机号,接码,在线接收短信,SMS验证码,全球接码'
+      title: '2026年最新接码平台 - 中国+86虚拟手机号短信验证码接收 | GlobalSMS',
+      description: '2026年最新最好用的接码平台，提供中国+86及全球150+国家虚拟手机号接收短信验证码服务。支持Telegram、WhatsApp、微信、抖音等200+热门应用，成功率99.9%。',
+      keywords: '接码平台,2026接码平台,中国接码,+86接码,中国虚拟手机号,+86虚拟号码,短信验证码,虚拟手机号,接码,在线接收短信,SMS验证码,全球接码,中国手机号'
     },
     en: {
       title: 'Best SMS Verification Platform 2026 - Receive SMS Online | GlobalSMS',
