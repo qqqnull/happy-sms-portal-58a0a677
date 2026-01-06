@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- 首页 - 最高优先级 -->
+  <url>
+    <loc>https://smsverify.app/</loc>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://smsverify.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://smsverify.app/?lang=en"/>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- 登录页 -->
+  <url>
+    <loc>https://smsverify.app/login</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 注册页 -->
+  <url>
+    <loc>https://smsverify.app/register</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- API文档 -->
+  <url>
+    <loc>https://smsverify.app/api-docs</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- FAQ页面 -->
+  <url>
+    <loc>https://smsverify.app/faq</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- 教程页面 -->
+  <url>
+    <loc>https://smsverify.app/tutorial</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- 客服支持 -->
+  <url>
+    <loc>https://smsverify.app/support</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- 充值页面 -->
+  <url>
+    <loc>https://smsverify.app/recharge</loc>
+    <lastmod>2026-01-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>

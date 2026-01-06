@@ -39,6 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSupportLink } from '@/hooks/useSupportLink';
 import AppHeader from '@/components/layout/AppHeader';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import SEOContent from '@/components/SEOContent';
 import { getServiceIcon } from '@/lib/serviceIcons';
 import { getCountryFlag, getServiceFirstCharIcon } from '@/lib/countryData';
 import { toast } from '@/hooks/use-toast';
@@ -972,6 +973,8 @@ const Index = () => {
                   )}
                 </div>
               </div>
+              {/* SEO Content Section - Only show on country selection page */}
+              <SEOContent />
             </>
           )}
         </main>
