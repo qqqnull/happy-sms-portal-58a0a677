@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, Copy, RefreshCw, Timer, Phone, 
-  MessageSquare, Clock, AlertTriangle, CreditCard
+  MessageSquare, Clock, AlertTriangle, CreditCard, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -276,13 +276,33 @@ const ReceiveCodePage = () => {
     }
   };
 
-  // 获取验证码 - 总是弹出余额不足提示
-  const handleGetCode = () => {
-    setShowInsufficientDialog(true);
+  // 获取验证码列表 - 余额不足时提示
+  const handleGetCodeList = () => {
+    // 检查余额是否足够
+    const userBalance = profile?.balance || 0;
+    if (userBalance < price) {
+      setShowInsufficientDialog(true);
+    } else {
+      // 余额足够，执行获取验证码逻辑
+      toast({
+        title: lang === 'zh' ? '获取中' : 'Getting codes',
+        description: lang === 'zh' ? '正在获取验证码列表...' : 'Getting verification code list...',
+      });
+    }
   };
 
-  // 刷新短信列表
+  // 刷新短信列表 - 余额不足无法刷新
   const handleRefreshMessages = async () => {
+    const userBalance = profile?.balance || 0;
+    if (userBalance < price) {
+      toast({
+        title: lang === 'zh' ? '余额不足' : 'Insufficient Balance',
+        description: lang === 'zh' ? '余额不足无法获取已发送的验证码' : 'Insufficient balance to get sent verification codes',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsRefreshing(true);
     // 模拟刷新延迟
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -291,6 +311,11 @@ const ReceiveCodePage = () => {
       title: lang === 'zh' ? '已刷新' : 'Refreshed',
       description: lang === 'zh' ? '暂无新短信' : 'No new messages',
     });
+  };
+  
+  // 处理匿名支付跳转
+  const handleAnonymousPayment = () => {
+    navigate(`/anonymous-payment?amount=${price}&service=${encodeURIComponent(serviceName)}&country=${encodeURIComponent(countryName)}`);
   };
 
   // 返回首页并释放号码
@@ -389,16 +414,16 @@ const ReceiveCodePage = () => {
                 )}
                 {lang === 'zh' ? '更换号码' : 'Change'}
               </Button>
-              <Button onClick={handleGetCode}>
+              <Button onClick={handleGetCodeList}>
                 <MessageSquare className="h-4 w-4 mr-2" />
-                {lang === 'zh' ? '获取验证码' : 'Get Code'}
+                {lang === 'zh' ? '获取验证码列表' : 'Get Code List'}
               </Button>
             </div>
           </div>
         </div>
 
         {/* 价格信息 */}
-        <div className="bg-card rounded-xl border border-border p-4 mb-6">
+        <div className="bg-card rounded-xl border border-border p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -410,6 +435,32 @@ const ReceiveCodePage = () => {
           </div>
         </div>
 
+        {/* 获取验证码提示 */}
+        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800 p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              <p className="font-medium mb-1">
+                {lang === 'zh' ? '获取验证码说明' : 'How to Get Verification Code'}
+              </p>
+              <ul className="space-y-1 text-blue-600 dark:text-blue-400">
+                <li>• {lang === 'zh' 
+                  ? '在注册软件获取验证码以后，需要在下方点击刷新获取验证码' 
+                  : 'After requesting code in the app, click refresh below to get it'}
+                </li>
+                <li>• {lang === 'zh' 
+                  ? '获取验证码需要费用，费用为上方显示的服务价格' 
+                  : 'Getting codes costs the service price shown above'}
+                </li>
+                <li>• {lang === 'zh' 
+                  ? '注册同一个软件，多次发送验证码不重复收费' 
+                  : 'Multiple codes for same service are not charged repeatedly'}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* 短信列表 */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b border-border">
@@ -417,15 +468,24 @@ const ReceiveCodePage = () => {
               <MessageSquare className="h-5 w-5" />
               {lang === 'zh' ? '短信列表' : 'SMS Messages'}
             </h2>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleRefreshMessages}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {lang === 'zh' ? '刷新' : 'Refresh'}
-            </Button>
+            <div className="relative group">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRefreshMessages}
+                disabled={isRefreshing || (profile?.balance || 0) < price}
+                className={(profile?.balance || 0) < price ? 'opacity-50 cursor-not-allowed' : ''}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {lang === 'zh' ? '刷新' : 'Refresh'}
+              </Button>
+              {/* 余额不足时显示提示 */}
+              {(profile?.balance || 0) < price && (
+                <div className="absolute right-0 top-full mt-1 w-48 p-2 bg-destructive text-destructive-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                  {lang === 'zh' ? '余额不足无法获取已发送的验证码' : 'Insufficient balance to get sent codes'}
+                </div>
+              )}
+            </div>
           </div>
           
           <Table>
@@ -524,6 +584,16 @@ const ReceiveCodePage = () => {
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowInsufficientDialog(false)}>
               {lang === 'zh' ? '稍后再说' : 'Later'}
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={() => {
+                setShowInsufficientDialog(false);
+                handleAnonymousPayment();
+              }} 
+              className="gap-2"
+            >
+              {lang === 'zh' ? '匿名支付' : 'Anonymous Pay'}
             </Button>
             <Button 
               onClick={() => {
