@@ -593,7 +593,7 @@ const ReceiveCodePage = () => {
               }} 
               className="gap-2"
             >
-              {lang === 'zh' ? '匿名支付' : 'Anonymous Pay'}
+              {lang === 'zh' ? '不充值直接支付' : 'Pay Directly'}
             </Button>
             <Button 
               onClick={() => {

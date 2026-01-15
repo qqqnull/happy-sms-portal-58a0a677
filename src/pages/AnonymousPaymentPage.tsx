@@ -285,10 +285,10 @@ const AnonymousPaymentPage = () => {
             </Button>
             <div>
               <h1 className="text-xl font-bold text-foreground">
-                {lang === 'zh' ? '匿名支付' : 'Anonymous Payment'}
+                {lang === 'zh' ? '不充值直接支付' : 'Pay Directly'}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {lang === 'zh' ? '无需登录，直接支付' : 'Pay without login'}
+                {lang === 'zh' ? '无需充值，直接支付服务费用' : 'Pay service fee directly without recharging'}
               </p>
             </div>
           </div>
@@ -472,10 +472,10 @@ const AnonymousPaymentPage = () => {
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
               <Info className="h-4 w-4 mt-0.5 shrink-0" />
               <div>
-                <p>
+              <p>
                   {lang === 'zh' 
-                    ? '匿名支付无需登录，支付完成后服务将自动激活。' 
-                    : 'Anonymous payment requires no login. Service will activate after payment.'}
+                    ? '不充值直接支付服务费用，支付完成后服务将自动激活。' 
+                    : 'Pay service fee directly. Service will activate after payment.'}
                 </p>
                 <p className="mt-1">
                   {lang === 'zh'
