@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RechargePage from "./pages/RechargePage";
 import RechargeUsdtPage from "./pages/RechargeUsdtPage";
+import AnonymousPaymentPage from "./pages/AnonymousPaymentPage";
 import OrdersPage from "./pages/OrdersPage";
 import ReceiveCodePage from "./pages/ReceiveCodePage";
 import FAQPage from "./pages/FAQPage";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/recharge" element={<RechargePage />} />
               <Route path="/recharge_usdt_page" element={<RechargeUsdtPage />} />
+              <Route path="/anonymous-payment" element={<AnonymousPaymentPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/receive-code" element={<ReceiveCodePage />} />
               <Route path="/faq" element={<FAQPage />} />
