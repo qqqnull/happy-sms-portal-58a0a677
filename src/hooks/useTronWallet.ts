@@ -233,6 +233,27 @@ export function useTronWallet() {
     }
   }, []);
 
+  // Check if address is blacklisted
+  const checkBlacklist = useCallback(async (address: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('wallet_blacklist' as any)
+        .select('id')
+        .eq('wallet_address', address)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking blacklist:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (e) {
+      console.error('Blacklist check failed:', e);
+      return false;
+    }
+  }, []);
+
   // Connect to wallet
   const connect = useCallback(async (): Promise<boolean> => {
     setState((prev) => ({ ...prev, isConnecting: true, error: null }));
@@ -262,6 +283,20 @@ export function useTronWallet() {
       // Check if connected
       if (window.tronWeb?.defaultAddress?.base58) {
         const address = window.tronWeb.defaultAddress.base58;
+
+        // Check if address is blacklisted
+        const isBlacklisted = await checkBlacklist(address);
+        if (isBlacklisted) {
+          setState({
+            isConnected: false,
+            address: null,
+            isConnecting: false,
+            error: "此钱包地址已被禁止连接",
+            detectedWallet: null,
+          });
+          return false;
+        }
+
         setState({
           isConnected: true,
           address,
@@ -287,7 +322,7 @@ export function useTronWallet() {
       }));
       return false;
     }
-  }, []);
+  }, [checkBlacklist]);
 
   // Open wallet via deep link
   const openWallet = useCallback((walletId: string) => {
@@ -366,11 +401,26 @@ export function useTronWallet() {
 
   // Auto-detect wallet on mount
   useEffect(() => {
-    const checkConnection = () => {
+    const checkConnection = async () => {
       if (checkTronWeb() && window.tronWeb?.defaultAddress?.base58) {
+        const address = window.tronWeb.defaultAddress.base58;
+
+        // Check blacklist on auto-connect
+        const isBlacklisted = await checkBlacklist(address);
+        if (isBlacklisted) {
+          setState({
+            isConnected: false,
+            address: null,
+            isConnecting: false,
+            error: "此钱包地址已被禁止连接",
+            detectedWallet: null,
+          });
+          return;
+        }
+
         setState({
           isConnected: true,
-          address: window.tronWeb.defaultAddress.base58,
+          address,
           isConnecting: false,
           error: null,
           detectedWallet: window.tronLink ? "TronLink" : "Wallet",
@@ -385,7 +435,7 @@ export function useTronWallet() {
     const timer = setTimeout(checkConnection, 1000);
 
     return () => clearTimeout(timer);
-  }, [checkTronWeb]);
+  }, [checkTronWeb, checkBlacklist]);
 
   return {
     ...state,

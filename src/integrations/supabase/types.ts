@@ -370,6 +370,30 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_blacklist: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string | null
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
