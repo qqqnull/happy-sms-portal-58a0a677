@@ -474,13 +474,13 @@ const Index = () => {
                       <div className="text-xs sm:text-sm opacity-80 truncate">{t('highSuccessRateDesc')}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3">
+                  <a href="https://www.2026hao.cc/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 hover:bg-white/20 transition-colors cursor-pointer">
                     <Zap className="h-8 w-8 sm:h-10 sm:w-10 opacity-80 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className="font-semibold text-sm sm:text-base">{t('instantRecharge')}</div>
                       <div className="text-xs sm:text-sm opacity-80 truncate">{t('instantRechargeDesc')}</div>
                     </div>
-                  </div>
+                  </a>
                 </div>
               </div>
 

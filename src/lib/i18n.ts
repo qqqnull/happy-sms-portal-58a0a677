@@ -44,8 +44,8 @@ export const translations = {
     globalCoverageDesc: '支持150+国家和地区',
     highSuccessRate: '高接收率',
     highSuccessRateDesc: '成功率达99.9%',
-    instantRecharge: '即时到账',
-    instantRechargeDesc: '充值秒到，即刻使用',
+    instantRecharge: '其他平台',
+    instantRechargeDesc: '成品号及手机卡购买',
     
     // Country selection
     searchCountry: '搜索国家/地区...',
@@ -189,8 +189,8 @@ export const translations = {
     globalCoverageDesc: '150+ Countries & Regions',
     highSuccessRate: 'High Success Rate',
     highSuccessRateDesc: '99.9% Success Rate',
-    instantRecharge: 'Instant Deposit',
-    instantRechargeDesc: 'Instant top-up, use immediately',
+    instantRecharge: 'Other Platforms',
+    instantRechargeDesc: 'Ready-made accounts & SIM cards',
     
     // Country selection
     searchCountry: 'Search country/region...',
