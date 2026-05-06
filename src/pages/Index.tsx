@@ -158,7 +158,7 @@ const Index = () => {
       .eq('is_active', true);
 
     if (data) {
-      setCountryServices(data.map((cs: any) => ({
+      const mapped = data.map((cs: any) => ({
         id: cs.id,
         service_id: cs.service_id,
         price: Number(cs.price),
@@ -166,7 +166,9 @@ const Index = () => {
           ...cs.service,
           price_modifier: Number(cs.service.price_modifier)
         }
-      })));
+      }));
+      mapped.sort((a, b) => (a.service.sort_order ?? 0) - (b.service.sort_order ?? 0));
+      setCountryServices(mapped);
     } else {
       // If no country-specific services, use all services with default pricing
       setCountryServices([]);
