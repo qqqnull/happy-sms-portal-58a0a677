@@ -45,6 +45,8 @@ export const getServiceIcon = (iconName: string | null): string => {
     douyin: '🎵',
     kuaishou: '📹',
     bilibili: '📺',
+    chatgpt: '🤖',
+    claude: '🧠',
   };
 
   return iconMap[iconName || ''] || '📱';
