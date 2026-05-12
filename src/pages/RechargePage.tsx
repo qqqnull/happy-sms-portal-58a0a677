@@ -3,77 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Wallet, Zap, Shield, ArrowLeft, HelpCircle, Bitcoin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSupportLink } from '@/hooks/useSupportLink';
 import MainLayout from '@/components/layout/MainLayout';
 import FloatingContactButton from '@/components/FloatingContactButton';
-// Chain configuration with icons
-const chains = [
-  { 
-    id: 'trc20', 
-    name: 'TRC20', 
-    fullName: 'USDT-TRC20',
-    network: 'Tether on TRON Network',
-    available: true,
-    recommended: true,
-  },
-  { 
-    id: 'bsc', 
-    name: 'BSC', 
-    fullName: 'USDT-BEP20',
-    network: 'Binance Smart Chain',
-    available: false,
-    recommended: false,
-  },
-  { 
-    id: 'eth', 
-    name: 'ETH', 
-    fullName: 'USDT-ERC20',
-    network: 'Ethereum Network',
-    available: false,
-    recommended: false,
-  },
-  { 
-    id: 'arb', 
-    name: 'ARB', 
-    fullName: 'USDT-Arbitrum',
-    network: 'Arbitrum One',
-    available: false,
-    recommended: false,
-  },
-  { 
-    id: 'base', 
-    name: 'BASE', 
-    fullName: 'USDT-Base',
-    network: 'Base Network',
-    available: false,
-    recommended: false,
-  },
-  { 
-    id: 'sol', 
-    name: 'SOL', 
-    fullName: 'USDT-Solana',
-    network: 'Solana Network',
-    available: false,
-    recommended: false,
-  },
-  { 
-    id: 'xlayer', 
-    name: 'X Layer', 
-    fullName: 'USDT-XLayer',
-    network: 'OKX X Layer',
-    available: false,
-    recommended: false,
-  },
-];
 
 const RechargePage = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(5);
   const [customAmount, setCustomAmount] = useState('');
-  const [selectedChain, setSelectedChain] = useState('trc20');
   const { user, profile } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -122,24 +61,9 @@ const RechargePage = () => {
     }
   };
 
-  const handleChainSelect = (chainId: string) => {
-    const chain = chains.find(c => c.id === chainId);
-    if (chain && !chain.available) {
-      toast({
-        title: '通道暂时停止',
-        description: `${chain.name}链充值通道正在维护中，请选择TRC20网络`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    setSelectedChain(chainId);
-  };
-
   const getDisplayAmount = () => {
     return selectedAmount || Number(customAmount) || 5;
   };
-
-  const selectedChainData = chains.find(c => c.id === selectedChain);
 
   return (
     <MainLayout showSidebar={false}>
@@ -228,55 +152,6 @@ const RechargePage = () => {
                   </Button>
                 ))}
               </div>
-            </div>
-
-            {/* Network Selection */}
-            <div className="p-6 border-b border-border">
-              <label className="block text-sm font-medium text-foreground mb-3">
-                支付网络
-              </label>
-              <Select value={selectedChain} onValueChange={handleChainSelect}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="选择支付网络" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chains.map((chain) => (
-                    <SelectItem 
-                      key={chain.id} 
-                      value={chain.id}
-                      className={!chain.available ? 'opacity-60' : ''}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{chain.name}</span>
-                        <span className="text-muted-foreground">- {chain.fullName}</span>
-                        {chain.recommended && (
-                          <span className="px-2 py-0.5 text-xs bg-success text-success-foreground rounded">
-                            推荐
-                          </span>
-                        )}
-                        {!chain.available && (
-                          <span className="px-2 py-0.5 text-xs bg-destructive/10 text-destructive rounded">
-                            暂停
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Selected Chain Details */}
-              {selectedChainData && selectedChainData.available && (
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center text-lg">
-                    ₮
-                  </div>
-                  <div>
-                    <div className="font-medium">{selectedChainData.fullName}</div>
-                    <div className="text-xs text-muted-foreground">{selectedChainData.network}</div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Recharge Notice */}

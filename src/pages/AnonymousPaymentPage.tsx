@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const PAYMENT_TIMEOUT = 15 * 60;
 const DEFAULT_EXCHANGE_RATE = 7;
-const DEFAULT_PLATFORM = 'zhanghao';
+const PAYMENT_PLATFORM = '2026sms';
 
 const generateAnonymousOrderId = () => {
   const timestamp = Date.now();
@@ -24,7 +24,6 @@ const AnonymousPaymentPage = () => {
   const [copiedOrderId, setCopiedOrderId] = useState(false);
   const [timeLeft, setTimeLeft] = useState(PAYMENT_TIMEOUT);
   const [paymentOrderId, setPaymentOrderId] = useState<string>('');
-  const [platform, setPlatform] = useState<string>(DEFAULT_PLATFORM);
   const [exchangeRate, setExchangeRate] = useState<number>(DEFAULT_EXCHANGE_RATE);
   const [isLoadingRate, setIsLoadingRate] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -38,22 +37,6 @@ const AnonymousPaymentPage = () => {
   const countryName = searchParams.get('country') || '';
   const usdtAmount = cnyAmount > 0 ? cnyAmount / exchangeRate : 0;
   const usdtAmountStr = usdtAmount.toFixed(2);
-
-  // Fetch platform setting
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from('app_settings' as any)
-          .select('value')
-          .eq('key', 'payment_platform')
-          .maybeSingle() as { data: { value: string } | null };
-        if (data?.value) setPlatform(data.value);
-      } catch (e) {
-        console.log('Using default platform');
-      }
-    })();
-  }, []);
 
   // Fetch exchange rate
   useEffect(() => {
@@ -121,7 +104,7 @@ const AnonymousPaymentPage = () => {
   const handleConfirmAndPay = () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    const url = `https://payusdt.shop/?platform=${encodeURIComponent(platform)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmountStr}`;
+    const url = `https://payusdt.shop/?platform=${encodeURIComponent(PAYMENT_PLATFORM)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmountStr}`;
     window.location.href = url;
   };
 
@@ -203,7 +186,7 @@ const AnonymousPaymentPage = () => {
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div className="space-y-3 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付币种' : 'Currency'}</span><span className="font-medium">USDT (TRC20)</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付平台' : 'Platform'}</span><span className="font-medium">{platform}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付平台' : 'Platform'}</span><span className="font-medium">{PAYMENT_PLATFORM}</span></div>
             <div className="flex justify-between border-t pt-3"><span className="text-muted-foreground">{lang === 'zh' ? '应付金额' : 'Total'}</span><span className="font-bold text-lg text-primary">{usdtAmountStr} USDT</span></div>
           </div>
 
