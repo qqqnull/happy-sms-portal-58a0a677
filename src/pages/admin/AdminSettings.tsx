@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import AdminLayout from './AdminLayout';
 
 const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
-const DEFAULT_PAYMENT_PLATFORM = 'zhanghao';
+const DEFAULT_PAYMENT_PLATFORM = '2026sms';
+const DEFAULT_PAYMENT_DOMAIN = 'payusdt.buzz';
 
 interface AppSetting {
   id: string;
@@ -25,6 +26,8 @@ const AdminSettings = () => {
   const [savingSupport, setSavingSupport] = useState(false);
   const [paymentPlatform, setPaymentPlatform] = useState(DEFAULT_PAYMENT_PLATFORM);
   const [savingPlatform, setSavingPlatform] = useState(false);
+  const [paymentDomain, setPaymentDomain] = useState(DEFAULT_PAYMENT_DOMAIN);
+  const [savingDomain, setSavingDomain] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -46,6 +49,8 @@ const AdminSettings = () => {
         if (support) setSupportLink(support.value);
         const plat = data.find((s) => s.key === 'payment_platform');
         if (plat) setPaymentPlatform(plat.value);
+        const dom = data.find((s) => s.key === 'payment_domain');
+        if (dom) setPaymentDomain(dom.value);
       }
     } catch (e) {
       console.error(e);
@@ -89,6 +94,25 @@ const AdminSettings = () => {
     setSavingPlatform(false);
   };
 
+  const handleSaveDomain = async () => {
+    const cleaned = paymentDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!cleaned) return toast.error('请输入支付域名');
+    setSavingDomain(true);
+    const { error } = await supabase
+      .from('app_settings' as any)
+      .upsert(
+        { key: 'payment_domain', value: cleaned, description: '支付跳转域名 (不含 https://)' },
+        { onConflict: 'key' }
+      ) as { error: any };
+    if (error) toast.error('保存失败');
+    else {
+      setPaymentDomain(cleaned);
+      toast.success('支付域名已保存');
+      fetchSettings();
+    }
+    setSavingDomain(false);
+  };
+
   return (
     <AdminLayout>
       <div className="p-6">
@@ -108,6 +132,40 @@ const AdminSettings = () => {
           </div>
         ) : (
           <div className="grid gap-6">
+            {/* Payment Domain Settings */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <CardTitle>支付跳转域名</CardTitle>
+                </div>
+                <CardDescription>
+                  设置 USDT 支付跳转的目标域名（无需包含 https://）
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="payment_domain">支付域名</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="payment_domain"
+                      placeholder="payusdt.buzz"
+                      value={paymentDomain}
+                      onChange={(e) => setPaymentDomain(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button onClick={handleSaveDomain} disabled={savingDomain}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {savingDomain ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    跳转 URL 示例：https://{paymentDomain || DEFAULT_PAYMENT_DOMAIN}/?platform={paymentPlatform || DEFAULT_PAYMENT_PLATFORM}&amp;order_id=xxx&amp;amount=10
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Payment Platform Settings */}
             <Card>
               <CardHeader>
