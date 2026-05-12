@@ -104,7 +104,7 @@ const AnonymousPaymentPage = () => {
   const handleConfirmAndPay = () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    const url = `https://payusdt.shop/?platform=${encodeURIComponent(platform)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmountStr}`;
+    const url = `https://payusdt.shop/?platform=${encodeURIComponent(PAYMENT_PLATFORM)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmountStr}`;
     window.location.href = url;
   };
 
@@ -186,7 +186,7 @@ const AnonymousPaymentPage = () => {
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div className="space-y-3 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付币种' : 'Currency'}</span><span className="font-medium">USDT (TRC20)</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付平台' : 'Platform'}</span><span className="font-medium">{platform}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付平台' : 'Platform'}</span><span className="font-medium">{PAYMENT_PLATFORM}</span></div>
             <div className="flex justify-between border-t pt-3"><span className="text-muted-foreground">{lang === 'zh' ? '应付金额' : 'Total'}</span><span className="font-bold text-lg text-primary">{usdtAmountStr} USDT</span></div>
           </div>
 
