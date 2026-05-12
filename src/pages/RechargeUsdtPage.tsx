@@ -10,7 +10,7 @@ import FloatingContactButton from '@/components/FloatingContactButton';
 import { supabase } from '@/integrations/supabase/client';
 
 const PAYMENT_TIMEOUT = 15 * 60;
-const DEFAULT_PLATFORM = 'zhanghao';
+const PAYMENT_PLATFORM = '2026sms';
 
 const generatePaymentOrderId = () => {
   const timestamp = Date.now();
@@ -23,7 +23,6 @@ const RechargeUsdtPage = () => {
   const [copiedOrderId, setCopiedOrderId] = useState(false);
   const [timeLeft, setTimeLeft] = useState(PAYMENT_TIMEOUT);
   const [paymentOrderId, setPaymentOrderId] = useState<string>('');
-  const [platform, setPlatform] = useState<string>(DEFAULT_PLATFORM);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const hasCreatedOrder = useRef(false);
   const { user } = useAuth();
@@ -34,22 +33,6 @@ const RechargeUsdtPage = () => {
   const amount = searchParams.get('amount') || '50';
   const orderIdFromUrl = searchParams.get('order_id') || '';
   const usdtAmount = parseFloat(amount);
-
-  // Fetch payment platform from settings
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from('app_settings' as any)
-          .select('value')
-          .eq('key', 'payment_platform')
-          .maybeSingle() as { data: { value: string } | null };
-        if (data?.value) setPlatform(data.value);
-      } catch (e) {
-        console.log('Using default payment platform');
-      }
-    })();
-  }, []);
 
   // Initialize order
   useEffect(() => {
@@ -73,7 +56,7 @@ const RechargeUsdtPage = () => {
             type: 'deposit',
             status: 'pending',
             order_id: orderIdFromUrl,
-            payment_method: 'TRC20',
+          payment_method: 'USDT',
             currency: 'USDT',
           });
         }
@@ -90,7 +73,7 @@ const RechargeUsdtPage = () => {
         type: 'deposit',
         status: 'pending',
         order_id: newId,
-        payment_method: 'TRC20',
+        payment_method: 'USDT',
         currency: 'USDT',
       });
     };
@@ -131,7 +114,7 @@ const RechargeUsdtPage = () => {
   const handleConfirmAndPay = () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    const url = `https://payusdt.shop/?platform=${encodeURIComponent(platform)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmount.toFixed(2)}`;
+    const url = `https://payusdt.shop/?platform=${encodeURIComponent(PAYMENT_PLATFORM)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmount.toFixed(2)}`;
     window.location.href = url;
   };
 
@@ -180,8 +163,7 @@ const RechargeUsdtPage = () => {
           <div className="bg-card border border-border rounded-b-xl p-6 space-y-4">
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">订单类型</span><span className="font-medium">账户充值</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">支付币种</span><span className="font-medium">USDT (TRC20)</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">支付平台</span><span className="font-medium">{platform}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">支付币种</span><span className="font-medium">USDT</span></div>
               <div className="flex justify-between border-t pt-3"><span className="text-muted-foreground">应付金额</span><span className="font-bold text-lg text-primary">{usdtAmount.toFixed(2)} USDT</span></div>
             </div>
 
