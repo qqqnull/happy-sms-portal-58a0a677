@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSupportLink } from '@/hooks/useSupportLink';
+import { usePaymentConfig } from '@/hooks/usePaymentConfig';
 import FloatingContactButton from '@/components/FloatingContactButton';
 import { supabase } from '@/integrations/supabase/client';
 
 const PAYMENT_TIMEOUT = 15 * 60;
 const DEFAULT_EXCHANGE_RATE = 7;
-const PAYMENT_PLATFORM = '2026sms';
 
 const generateAnonymousOrderId = () => {
   const timestamp = Date.now();
@@ -31,6 +31,7 @@ const AnonymousPaymentPage = () => {
   const { lang } = useLanguage();
   const { toast } = useToast();
   const { supportLink } = useSupportLink();
+  const { platform: PAYMENT_PLATFORM, buildPaymentUrl } = usePaymentConfig();
 
   const cnyAmount = parseFloat(searchParams.get('amount') || '0');
   const serviceName = searchParams.get('service') || '';
@@ -104,8 +105,7 @@ const AnonymousPaymentPage = () => {
   const handleConfirmAndPay = () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    const url = `https://payusdt.shop/?platform=${encodeURIComponent(PAYMENT_PLATFORM)}&order_id=${encodeURIComponent(paymentOrderId)}&amount=${usdtAmountStr}`;
-    window.location.href = url;
+    window.location.href = buildPaymentUrl(paymentOrderId, usdtAmountStr);
   };
 
   return (
