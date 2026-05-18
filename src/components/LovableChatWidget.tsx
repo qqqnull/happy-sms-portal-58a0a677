@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 const WIDGET_SCRIPT_URL = 'https://clgfrowsysmiwbxyccag.supabase.co/storage/v1/object/public/widget/chat-widget.js';
 const PRIMARY_COLOR = '#2563eb';
-const TELEGRAM_URL = 'https://t.me/support';
+const TELEGRAM_URL = 'https://t.me/kfGlobalSms';
 
 const LovableChatWidget = () => {
   useEffect(() => {
