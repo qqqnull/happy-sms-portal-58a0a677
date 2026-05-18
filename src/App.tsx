@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import SEOHead from "@/components/SEOHead";
+import LovableChatWidget from "@/components/LovableChatWidget";
+import { useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -35,6 +37,12 @@ import AdminWalletBlacklist from "./pages/admin/AdminWalletBlacklist";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const GlobalChatWidget = () => {
+  const location = useLocation();
+  if (location.pathname.startsWith("/admin")) return null;
+  return <LovableChatWidget />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -74,6 +82,7 @@ const App = () => (
               <Route path="/admin/wallet-blacklist" element={<AdminWalletBlacklist />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <GlobalChatWidget />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useSupportLink } from '@/hooks/useSupportLink';
 import { usePaymentConfig } from '@/hooks/usePaymentConfig';
 import MainLayout from '@/components/layout/MainLayout';
-import LovableChatWidget from '@/components/LovableChatWidget';
 import { supabase } from '@/integrations/supabase/client';
 
 const PAYMENT_TIMEOUT = 15 * 60;
@@ -185,7 +184,6 @@ const RechargeUsdtPage = () => {
           </div>
         </div>
       </div>
-      <LovableChatWidget />
     </MainLayout>
   );
 };
