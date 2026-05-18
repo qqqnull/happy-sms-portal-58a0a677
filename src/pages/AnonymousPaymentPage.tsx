@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSupportLink } from '@/hooks/useSupportLink';
 import { usePaymentConfig } from '@/hooks/usePaymentConfig';
-import FloatingContactButton from '@/components/FloatingContactButton';
+import LovableChatWidget from '@/components/LovableChatWidget';
 import { supabase } from '@/integrations/supabase/client';
 
 const PAYMENT_TIMEOUT = 15 * 60;
@@ -204,7 +204,7 @@ const AnonymousPaymentPage = () => {
           </div>
         </div>
       </main>
-      <FloatingContactButton />
+      <LovableChatWidget />
     </div>
   );
 };

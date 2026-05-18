@@ -8,7 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSupportLink } from '@/hooks/useSupportLink';
 import MainLayout from '@/components/layout/MainLayout';
-import FloatingContactButton from '@/components/FloatingContactButton';
+import LovableChatWidget from '@/components/LovableChatWidget';
 
 const RechargePage = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(5);
@@ -230,7 +230,7 @@ const RechargePage = () => {
       </div>
 
       {/* Floating Contact Button */}
-      <FloatingContactButton />
+      <LovableChatWidget />
     </MainLayout>
   );
 };
