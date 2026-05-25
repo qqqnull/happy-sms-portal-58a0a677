@@ -7,7 +7,7 @@ import {
   UserPlus, MapPin, Phone, MessageSquare, LogIn,
   Filter, ArrowUpDown, RefreshCw, Wifi, Star, Menu,
   ChevronLeft, ChevronRight, AlertTriangle, Info, CreditCard, Banknote,
-  Clock
+  Clock, Sparkles, Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
