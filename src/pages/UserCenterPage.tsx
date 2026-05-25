@@ -223,8 +223,8 @@ const UserCenterPage = () => {
                       <Wallet className="h-7 w-7 text-primary" />
                     </div>
                     <div>
-                      <div className="text-3xl font-bold">{stats.balance.toFixed(1)}</div>
-                      <div className="text-sm text-muted-foreground">账户余额 (美元)</div>
+                      <div className="text-3xl font-bold">${stats.balance.toFixed(2)}</div>
+                      <div className="text-sm text-muted-foreground">账户余额 (USD)</div>
                     </div>
                   </div>
                   <div className="bg-muted/50 rounded-xl p-6 flex items-center gap-4">
