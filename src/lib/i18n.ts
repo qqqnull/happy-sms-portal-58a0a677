@@ -201,6 +201,15 @@ export const translations = {
     instantRecharge: 'Other Platforms',
     instantRechargeDesc: 'Ready-made accounts & SIM cards',
     
+    // Persistent Number banner
+    newFeature: 'New Feature',
+    persistentNumberBannerTitle: 'Persistent Numbers Available',
+    persistentNumberBannerDesc: 'Lock numbers after use. Monthly fee equals first-use price. Use this month, next month free.',
+    learnMore: 'Learn More',
+    
+    // User center
+    persistentNumbers: 'My Persistent Numbers',
+    
     // Country selection
     searchCountry: 'Search country/region...',
     selectCountryTitle: 'Select Country/Region',
