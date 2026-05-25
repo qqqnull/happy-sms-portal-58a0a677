@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, Copy, RefreshCw, Timer, Phone, 
-  MessageSquare, Clock, AlertTriangle, CreditCard, Info
+  MessageSquare, Clock, AlertTriangle, CreditCard, Info, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,6 +53,8 @@ const ReceiveCodePage = () => {
   const [showInsufficientDialog, setShowInsufficientDialog] = useState(false);
   const [smsMessages, setSmsMessages] = useState<SmsMessage[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
+  const [isPersistent, setIsPersistent] = useState(false);
 
   // 获取手机号
   const fetchPhoneNumber = useCallback(async () => {
@@ -276,6 +278,56 @@ const ReceiveCodePage = () => {
     }
   };
 
+  // 检查当前号码是否已是长期号码
+  useEffect(() => {
+    if (!phoneNumber) { setIsPersistent(false); return; }
+    supabase
+      .from('persistent_numbers')
+      .select('id')
+      .eq('phone_number', phoneNumber)
+      .neq('status', 'expired')
+      .maybeSingle()
+      .then(({ data }) => setIsPersistent(!!data));
+  }, [phoneNumber]);
+
+  // 锁定为长期号码
+  const handleLockPersistent = async () => {
+    if (!phoneNumber || !user) return;
+    setIsLocking(true);
+    try {
+      // country_id 查询
+      const { data: country } = await supabase
+        .from('countries')
+        .select('id')
+        .eq('code', countryCode)
+        .maybeSingle();
+
+      const { data, error } = await supabase.rpc('lock_persistent_number', {
+        _phone_number: phoneNumber,
+        _country_code: countryCode,
+        _country_id: country?.id || null,
+        _service_id: serviceId || null,
+        _monthly_fee: price,
+      });
+      if (error) throw error;
+      const result = data as { success: boolean; error?: string } | null;
+      if (!result?.success) {
+        toast({ title: lang === 'zh' ? '锁定失败' : 'Failed', description: result?.error || '', variant: 'destructive' });
+        return;
+      }
+      setIsPersistent(true);
+      toast({
+        title: lang === 'zh' ? '已锁定为长期号码' : 'Locked as persistent',
+        description: lang === 'zh' ? `月租 $${price.toFixed(2)}，本月使用过则下月免费` : `Monthly $${price.toFixed(2)}`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({ title: '锁定失败', description: String(e), variant: 'destructive' });
+    } finally {
+      setIsLocking(false);
+    }
+  };
+
   // 获取验证码列表 - 余额不足时提示
   const handleGetCodeList = () => {
     // 检查余额是否足够
@@ -413,6 +465,19 @@ const ReceiveCodePage = () => {
                   <RefreshCw className="h-4 w-4 mr-2" />
                 )}
                 {lang === 'zh' ? '更换号码' : 'Change'}
+              </Button>
+              <Button
+                variant={isPersistent ? 'secondary' : 'default'}
+                onClick={handleLockPersistent}
+                disabled={isLocking || isPersistent || !phoneNumber}
+                className={!isPersistent ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}
+              >
+                <Star className={`h-4 w-4 mr-2 ${isPersistent ? '' : ''}`} />
+                {isLocking
+                  ? (lang === 'zh' ? '锁定中...' : 'Locking...')
+                  : isPersistent
+                    ? (lang === 'zh' ? '已是长期号码' : 'Persistent')
+                    : (lang === 'zh' ? `锁为长期号码 ($${price.toFixed(2)}/月)` : `Make Persistent ($${price.toFixed(2)}/mo)`)}
               </Button>
               <Button onClick={handleGetCodeList}>
                 <MessageSquare className="h-4 w-4 mr-2" />
