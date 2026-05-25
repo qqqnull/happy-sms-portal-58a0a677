@@ -10,7 +10,8 @@ import {
   Settings,
   ArrowLeft,
   Upload,
-  Shield
+  Shield,
+  Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
@@ -54,6 +55,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { icon: CreditCard, label: '交易管理', path: '/admin/transactions' },
     { icon: Upload, label: '数据导入', path: '/admin/import' },
     { icon: Smartphone, label: '手机号管理', path: '/admin/phone-numbers' },
+    { icon: Phone, label: '长期号码', path: '/admin/persistent-numbers' },
     { icon: Shield, label: '钱包黑名单', path: '/admin/wallet-blacklist' },
     { icon: Settings, label: '系统设置', path: '/admin/settings' },
   ];

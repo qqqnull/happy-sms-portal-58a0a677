@@ -34,6 +34,8 @@ import AdminImport from "./pages/admin/AdminImport";
 import AdminPhoneNumbers from "./pages/admin/AdminPhoneNumbers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminWalletBlacklist from "./pages/admin/AdminWalletBlacklist";
+import AdminPersistentNumbers from "./pages/admin/AdminPersistentNumbers";
+import PersistentNumbersPage from "./pages/PersistentNumbersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +69,7 @@ const App = () => (
               <Route path="/api-docs" element={<APIDocsPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/user-center" element={<UserCenterPage />} />
+              <Route path="/persistent-numbers" element={<PersistentNumbersPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/account-security" element={<AccountSecurityPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
@@ -80,6 +83,7 @@ const App = () => (
               <Route path="/admin/phone-numbers" element={<AdminPhoneNumbers />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/admin/wallet-blacklist" element={<AdminWalletBlacklist />} />
+              <Route path="/admin/persistent-numbers" element={<AdminPersistentNumbers />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <GlobalChatWidget />
