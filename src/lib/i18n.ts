@@ -47,6 +47,15 @@ export const translations = {
     instantRecharge: '其他平台',
     instantRechargeDesc: '成品号及手机卡购买',
     
+    // Persistent Number banner
+    newFeature: '新功能',
+    persistentNumberBannerTitle: '长期号码上线',
+    persistentNumberBannerDesc: '接码成功后一键锁定为长期号码，月租低至首次使用价，当月使用下月免费续期',
+    learnMore: '了解详情',
+    
+    // User center
+    persistentNumbers: '我的长期号码',
+    
     // Country selection
     searchCountry: '搜索国家/地区...',
     selectCountryTitle: '选择国家/地区',
@@ -191,6 +200,15 @@ export const translations = {
     highSuccessRateDesc: '99.9% Success Rate',
     instantRecharge: 'Other Platforms',
     instantRechargeDesc: 'Ready-made accounts & SIM cards',
+    
+    // Persistent Number banner
+    newFeature: 'New Feature',
+    persistentNumberBannerTitle: 'Persistent Numbers Available',
+    persistentNumberBannerDesc: 'Lock numbers after use. Monthly fee equals first-use price. Use this month, next month free.',
+    learnMore: 'Learn More',
+    
+    // User center
+    persistentNumbers: 'My Persistent Numbers',
     
     // Country selection
     searchCountry: 'Search country/region...',

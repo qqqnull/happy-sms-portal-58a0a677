@@ -7,7 +7,7 @@ import {
   UserPlus, MapPin, Phone, MessageSquare, LogIn,
   Filter, ArrowUpDown, RefreshCw, Wifi, Star, Menu,
   ChevronLeft, ChevronRight, AlertTriangle, Info, CreditCard, Banknote,
-  Clock
+  Clock, Sparkles, Bookmark
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -485,6 +485,34 @@ const Index = () => {
                   </a>
                 </div>
               </div>
+
+              {/* Persistent Number Feature Banner */}
+              <Link to="/persistent-numbers" className="block">
+                <div className="group relative bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-3 sm:p-4 cursor-pointer hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 transition-all">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-emerald-500 dark:bg-emerald-600 flex items-center justify-center">
+                      <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] sm:text-xs font-bold">
+                          {t('newFeature')}
+                        </span>
+                        <h3 className="font-bold text-emerald-800 dark:text-emerald-300 text-sm sm:text-base">
+                          {t('persistentNumberBannerTitle')}
+                        </h3>
+                      </div>
+                      <p className="text-emerald-700/80 dark:text-emerald-400/80 text-xs sm:text-sm mt-1">
+                        {t('persistentNumberBannerDesc')}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 hidden sm:flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
+                      {t('learnMore')}
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
 
               {/* Search and Filters */}
               <div className="bg-card rounded-xl shadow-sm p-3 sm:p-4">
