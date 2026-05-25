@@ -135,6 +135,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          is_persistent_use: boolean
           phone_number: string
           price: number
           service_id: string
@@ -148,6 +149,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_persistent_use?: boolean
           phone_number: string
           price: number
           service_id: string
@@ -161,6 +163,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_persistent_use?: boolean
           phone_number?: string
           price?: number
           service_id?: string
@@ -192,14 +195,73 @@ export type Database = {
           },
         ]
       }
+      persistent_numbers: {
+        Row: {
+          country_code: string
+          country_id: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          first_service_id: string | null
+          grace_period_end: string | null
+          id: string
+          last_renewed_at: string | null
+          monthly_fee: number
+          next_billing_at: string
+          phone_number: string
+          status: string
+          updated_at: string
+          used_this_period: boolean
+          user_id: string
+        }
+        Insert: {
+          country_code: string
+          country_id?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          first_service_id?: string | null
+          grace_period_end?: string | null
+          id?: string
+          last_renewed_at?: string | null
+          monthly_fee: number
+          next_billing_at?: string
+          phone_number: string
+          status?: string
+          updated_at?: string
+          used_this_period?: boolean
+          user_id: string
+        }
+        Update: {
+          country_code?: string
+          country_id?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          first_service_id?: string | null
+          grace_period_end?: string | null
+          id?: string
+          last_renewed_at?: string | null
+          monthly_fee?: number
+          next_billing_at?: string
+          phone_number?: string
+          status?: string
+          updated_at?: string
+          used_this_period?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       phone_numbers: {
         Row: {
           country_code: string
           created_at: string
           id: string
           is_available: boolean | null
+          is_persistent: boolean
           locked_by: string | null
           locked_until: string | null
+          owner_user_id: string | null
           phone_number: string
         }
         Insert: {
@@ -207,8 +269,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_available?: boolean | null
+          is_persistent?: boolean
           locked_by?: string | null
           locked_until?: string | null
+          owner_user_id?: string | null
           phone_number: string
         }
         Update: {
@@ -216,8 +280,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_available?: boolean | null
+          is_persistent?: boolean
           locked_by?: string | null
           locked_until?: string | null
+          owner_user_id?: string | null
           phone_number?: string
         }
         Relationships: [
@@ -405,6 +471,25 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      lock_persistent_number: {
+        Args: {
+          _country_code: string
+          _country_id: string
+          _monthly_fee: number
+          _phone_number: string
+          _service_id: string
+        }
+        Returns: Json
+      }
+      process_persistent_renewals: { Args: never; Returns: Json }
+      release_persistent_number: {
+        Args: { _persistent_id: string }
+        Returns: Json
+      }
+      renew_persistent_number: {
+        Args: { _persistent_id: string }
+        Returns: Json
       }
     }
     Enums: {
