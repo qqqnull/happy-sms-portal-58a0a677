@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   User, Wallet, Shield, Clock, ChevronRight, 
-  Phone, CheckCircle, ListChecks, Calendar, Plus
+  Phone, CheckCircle, ListChecks, Calendar, Plus, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -169,6 +169,13 @@ const UserCenterPage = () => {
                   >
                     <Clock className="h-4 w-4" />
                     <span>历史记录</span>
+                  </Link>
+                  <Link
+                    to="/persistent-numbers"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Star className="h-4 w-4" />
+                    <span>我的长期号码</span>
                   </Link>
                   <Link
                     to="/account-security"
