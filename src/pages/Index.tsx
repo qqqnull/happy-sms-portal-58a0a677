@@ -394,10 +394,28 @@ const Index = () => {
 
   // Service icon component - uses first character
   const ServiceIcon = ({ name, icon }: { name: string; icon?: string }) => {
+    // Render SVG/PNG icons via <img>
+    if (icon && (icon.startsWith('/icons/') || icon.startsWith('http'))) {
+      return (
+        <img
+          src={icon}
+          alt={name}
+          className="w-7 h-7 object-contain"
+          loading="lazy"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      );
+    }
     // Try to use the icon from serviceIcons first
     const existingIcon = icon ? getServiceIcon(icon) : null;
     if (existingIcon && existingIcon !== '📱') {
       return <span className="text-2xl">{existingIcon}</span>;
+    }
+    // If icon is itself an emoji string (single grapheme), render directly
+    if (icon && icon.length <= 4 && !/^[a-z0-9_-]+$/i.test(icon)) {
+      return <span className="text-2xl">{icon}</span>;
     }
     // Fallback to first character
     const firstChar = getServiceFirstCharIcon(name);
