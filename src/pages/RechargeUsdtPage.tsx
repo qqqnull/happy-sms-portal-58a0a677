@@ -114,8 +114,14 @@ const RechargeUsdtPage = () => {
   const handleConfirmAndPay = async () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    const url = await buildPaymentUrlFresh(paymentOrderId, usdtAmount);
-    window.location.href = url;
+    try {
+      const url = await buildPaymentUrlFresh(paymentOrderId, usdtAmount);
+      window.location.href = url;
+    } catch (error) {
+      console.error('Payment config refresh failed:', error);
+      setIsRedirecting(false);
+      toast({ title: '支付配置读取失败', description: '请稍后重试或联系管理员', variant: 'destructive' });
+    }
   };
 
   return (
