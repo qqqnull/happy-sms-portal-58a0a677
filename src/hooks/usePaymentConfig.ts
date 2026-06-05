@@ -1,18 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const DEFAULT_PAYMENT_DOMAIN = 'payusdt.buzz';
+const DEFAULT_PAYMENT_DOMAIN = 'payusdt.shop';
 const DEFAULT_PAYMENT_PLATFORM = '2026sms';
 
+const cleanDomain = (value?: string | null) =>
+  (value || '').trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
 const fetchConfig = async () => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('app_settings')
     .select('key,value')
     .in('key', ['payment_domain', 'payment_platform']);
-  const d = data?.find((s: any) => s.key === 'payment_domain')?.value;
+
+  if (error) throw error;
+
+  const d = cleanDomain(data?.find((s: any) => s.key === 'payment_domain')?.value);
   const p = data?.find((s: any) => s.key === 'payment_platform')?.value;
   return {
-    domain: d ? d.replace(/^https?:\/\//, '').replace(/\/$/, '') : DEFAULT_PAYMENT_DOMAIN,
+    domain: d || DEFAULT_PAYMENT_DOMAIN,
     platform: p || DEFAULT_PAYMENT_PLATFORM,
   };
 };
@@ -46,12 +52,10 @@ export const usePaymentConfig = () => {
 
   // Always fetch latest from DB right before redirect to avoid stale cache on first paint.
   const buildPaymentUrlFresh = async (orderId: string, amount: number | string) => {
-    try {
-      const c = await fetchConfig();
-      latest.current = c;
-    } catch (e) {
-      console.error('Failed to refresh payment config:', e);
-    }
+    const c = await fetchConfig();
+    latest.current = c;
+    setDomain(c.domain);
+    setPlatform(c.platform);
     return buildPaymentUrl(orderId, amount);
   };
 
