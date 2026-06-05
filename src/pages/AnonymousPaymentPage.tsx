@@ -104,8 +104,18 @@ const AnonymousPaymentPage = () => {
   const handleConfirmAndPay = async () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    const url = await buildPaymentUrlFresh(paymentOrderId, usdtAmountStr);
-    window.location.href = url;
+    try {
+      const url = await buildPaymentUrlFresh(paymentOrderId, usdtAmountStr);
+      window.location.href = url;
+    } catch (error) {
+      console.error('Payment config refresh failed:', error);
+      setIsRedirecting(false);
+      toast({
+        title: lang === 'zh' ? '支付配置读取失败' : 'Payment Config Failed',
+        description: lang === 'zh' ? '请稍后重试或联系客服' : 'Please try again or contact support',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
