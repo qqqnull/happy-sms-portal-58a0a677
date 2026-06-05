@@ -27,7 +27,7 @@ const RechargeUsdtPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { supportLink } = useSupportLink();
-  const { buildPaymentUrl } = usePaymentConfig();
+  const { buildPaymentUrlFresh } = usePaymentConfig();
   const navigate = useNavigate();
 
   const amount = searchParams.get('amount') || '50';
@@ -111,10 +111,11 @@ const RechargeUsdtPage = () => {
     }
   };
 
-  const handleConfirmAndPay = () => {
+  const handleConfirmAndPay = async () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    window.location.href = buildPaymentUrl(paymentOrderId, usdtAmount);
+    const url = await buildPaymentUrlFresh(paymentOrderId, usdtAmount);
+    window.location.href = url;
   };
 
   return (

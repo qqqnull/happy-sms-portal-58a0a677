@@ -30,7 +30,7 @@ const AnonymousPaymentPage = () => {
   const { lang } = useLanguage();
   const { toast } = useToast();
   const { supportLink } = useSupportLink();
-  const { platform: PAYMENT_PLATFORM, buildPaymentUrl } = usePaymentConfig();
+  const { platform: PAYMENT_PLATFORM, buildPaymentUrlFresh } = usePaymentConfig();
 
   const cnyAmount = parseFloat(searchParams.get('amount') || '0');
   const serviceName = searchParams.get('service') || '';
@@ -101,10 +101,11 @@ const AnonymousPaymentPage = () => {
     }
   };
 
-  const handleConfirmAndPay = () => {
+  const handleConfirmAndPay = async () => {
     if (!paymentOrderId || usdtAmount <= 0) return;
     setIsRedirecting(true);
-    window.location.href = buildPaymentUrl(paymentOrderId, usdtAmountStr);
+    const url = await buildPaymentUrlFresh(paymentOrderId, usdtAmountStr);
+    window.location.href = url;
   };
 
   return (
