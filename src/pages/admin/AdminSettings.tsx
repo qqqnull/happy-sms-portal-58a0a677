@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import AdminLayout from './AdminLayout';
 
 const DEFAULT_SUPPORT_LINK = 'https://t.me/support';
-const DEFAULT_REDIRECT_API = 'https://clever-switchboard.lovable.app/api/public/redirect';
+const DEFAULT_PAYMENT_PLATFORM = '2026sms';
+const DEFAULT_PAYMENT_DOMAIN = 'payusdt.buzz';
 
 interface AppSetting {
   id: string;
@@ -23,8 +24,10 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
   const [supportLink, setSupportLink] = useState(DEFAULT_SUPPORT_LINK);
   const [savingSupport, setSavingSupport] = useState(false);
-  const [redirectApi, setRedirectApi] = useState(DEFAULT_REDIRECT_API);
-  const [savingRedirect, setSavingRedirect] = useState(false);
+  const [paymentPlatform, setPaymentPlatform] = useState(DEFAULT_PAYMENT_PLATFORM);
+  const [savingPlatform, setSavingPlatform] = useState(false);
+  const [paymentDomain, setPaymentDomain] = useState(DEFAULT_PAYMENT_DOMAIN);
+  const [savingDomain, setSavingDomain] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -44,8 +47,10 @@ const AdminSettings = () => {
         setSettings(data);
         const support = data.find((s) => s.key === 'support_link');
         if (support) setSupportLink(support.value);
-        const api = data.find((s) => s.key === 'payment_redirect_api');
-        if (api) setRedirectApi(api.value);
+        const plat = data.find((s) => s.key === 'payment_platform');
+        if (plat) setPaymentPlatform(plat.value);
+        const dom = data.find((s) => s.key === 'payment_domain');
+        if (dom) setPaymentDomain(dom.value);
       }
     } catch (e) {
       console.error(e);
@@ -72,28 +77,40 @@ const AdminSettings = () => {
     setSavingSupport(false);
   };
 
-  const handleSaveRedirectApi = async () => {
-    const cleaned = redirectApi.trim();
-    if (!cleaned) return toast.error('请输入中心化跳转接口 URL');
-    try {
-      new URL(cleaned);
-    } catch {
-      return toast.error('请输入有效的 URL');
-    }
-    setSavingRedirect(true);
+  const handleSavePlatform = async () => {
+    if (!paymentPlatform.trim()) return toast.error('请输入平台标识');
+    setSavingPlatform(true);
     const { error } = await supabase
       .from('app_settings' as any)
       .upsert(
-        { key: 'payment_redirect_api', value: cleaned, description: '中心化收银台跳转接口 URL (POST {key, order_id, amount})' },
+        { key: 'payment_platform', value: paymentPlatform.trim(), description: '支付平台标识 (跳转支付时作为 platform 参数)' },
         { onConflict: 'key' }
       ) as { error: any };
     if (error) toast.error('保存失败');
     else {
-      setRedirectApi(cleaned);
-      toast.success('已保存');
+      toast.success('支付平台已保存');
       fetchSettings();
     }
-    setSavingRedirect(false);
+    setSavingPlatform(false);
+  };
+
+  const handleSaveDomain = async () => {
+    const cleaned = paymentDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!cleaned) return toast.error('请输入支付域名');
+    setSavingDomain(true);
+    const { error } = await supabase
+      .from('app_settings' as any)
+      .upsert(
+        { key: 'payment_domain', value: cleaned, description: '支付跳转域名 (不含 https://)' },
+        { onConflict: 'key' }
+      ) as { error: any };
+    if (error) toast.error('保存失败');
+    else {
+      setPaymentDomain(cleaned);
+      toast.success('支付域名已保存');
+      fetchSettings();
+    }
+    setSavingDomain(false);
   };
 
   return (
@@ -115,35 +132,69 @@ const AdminSettings = () => {
           </div>
         ) : (
           <div className="grid gap-6">
-            {/* Central Redirect API */}
+            {/* Payment Domain Settings */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Globe className="h-5 w-5 text-primary" />
-                  <CardTitle>收银台中心化跳转接口</CardTitle>
+                  <CardTitle>支付跳转域名</CardTitle>
                 </div>
                 <CardDescription>
-                  每次支付前，前端会 POST 此接口 {`{ key: "syt", order_id, amount }`}，读取响应的 url 字段并跳转。
+                  设置 USDT 支付跳转的目标域名（无需包含 https://）
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="payment_redirect_api">跳转接口 URL</Label>
+                  <Label htmlFor="payment_domain">支付域名</Label>
                   <div className="flex gap-2">
                     <Input
-                      id="payment_redirect_api"
-                      placeholder={DEFAULT_REDIRECT_API}
-                      value={redirectApi}
-                      onChange={(e) => setRedirectApi(e.target.value)}
+                      id="payment_domain"
+                      placeholder="payusdt.buzz"
+                      value={paymentDomain}
+                      onChange={(e) => setPaymentDomain(e.target.value)}
                       className="font-mono"
                     />
-                    <Button onClick={handleSaveRedirectApi} disabled={savingRedirect}>
+                    <Button onClick={handleSaveDomain} disabled={savingDomain}>
                       <Save className="h-4 w-4 mr-2" />
-                      {savingRedirect ? '保存中...' : '保存'}
+                      {savingDomain ? '保存中...' : '保存'}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    key 固定为 <code>syt</code>，不使用业务侧 platform_id。
+                    跳转 URL 示例：https://{paymentDomain || DEFAULT_PAYMENT_DOMAIN}/?platform={paymentPlatform || DEFAULT_PAYMENT_PLATFORM}&amp;order_id=xxx&amp;amount=10
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Platform Settings */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <CardTitle>支付平台标识</CardTitle>
+                </div>
+                <CardDescription>
+                  设置跳转到 payusdt.shop 时使用的 platform 参数（商户/平台标识）
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="payment_platform">Platform 标识</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="payment_platform"
+                      placeholder="zhanghao"
+                      value={paymentPlatform}
+                      onChange={(e) => setPaymentPlatform(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button onClick={handleSavePlatform} disabled={savingPlatform}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {savingPlatform ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    跳转 URL 示例：https://payusdt.shop/?platform={paymentPlatform}&amp;order_id=xxx&amp;amount=10
                   </p>
                 </div>
               </CardContent>

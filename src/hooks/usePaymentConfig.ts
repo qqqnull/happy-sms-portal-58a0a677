@@ -1,68 +1,63 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const DEFAULT_REDIRECT_API = 'https://clever-switchboard.lovable.app/api/public/redirect';
-const REDIRECT_KEY = 'syt';
+const DEFAULT_PAYMENT_DOMAIN = 'payusdt.shop';
+const DEFAULT_PAYMENT_PLATFORM = '2026sms';
 
-const fetchRedirectApi = async (): Promise<string> => {
+const cleanDomain = (value?: string | null) =>
+  (value || '').trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
+const fetchConfig = async () => {
   const { data, error } = await supabase
     .from('app_settings')
     .select('key,value')
-    .eq('key', 'payment_redirect_api')
-    .maybeSingle();
-  if (error) throw error;
-  const url = (data?.value || '').trim();
-  return url || DEFAULT_REDIRECT_API;
-};
+    .in('key', ['payment_domain', 'payment_platform']);
 
-const requestRedirectUrl = async (apiUrl: string, orderId: string, amount: string): Promise<string> => {
-  const payload = { key: REDIRECT_KEY, order_id: orderId, amount };
-  // Append to query string as a fallback so the target API can read the
-  // params regardless of whether it parses JSON body or query string.
-  const qs = new URLSearchParams({
-    key: REDIRECT_KEY,
-    order_id: orderId,
-    amount: String(amount),
-  }).toString();
-  const urlWithQs = apiUrl + (apiUrl.includes('?') ? '&' : '?') + qs;
-  const res = await fetch(urlWithQs, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`Redirect API HTTP ${res.status}`);
-  const json = await res.json();
-  if (!json?.url) throw new Error('Redirect API missing url field');
-  return json.url as string;
+  if (error) throw error;
+
+  const d = cleanDomain(data?.find((s: any) => s.key === 'payment_domain')?.value);
+  const p = data?.find((s: any) => s.key === 'payment_platform')?.value;
+  return {
+    domain: d || DEFAULT_PAYMENT_DOMAIN,
+    platform: p || DEFAULT_PAYMENT_PLATFORM,
+  };
 };
 
 export const usePaymentConfig = () => {
-  const [apiUrl, setApiUrl] = useState(DEFAULT_REDIRECT_API);
+  const [domain, setDomain] = useState(DEFAULT_PAYMENT_DOMAIN);
+  const [platform, setPlatform] = useState(DEFAULT_PAYMENT_PLATFORM);
   const [loading, setLoading] = useState(true);
-  const latest = useRef(DEFAULT_REDIRECT_API);
+  const latest = useRef({ domain: DEFAULT_PAYMENT_DOMAIN, platform: DEFAULT_PAYMENT_PLATFORM });
 
   useEffect(() => {
     (async () => {
       try {
-        const u = await fetchRedirectApi();
-        latest.current = u;
-        setApiUrl(u);
+        const c = await fetchConfig();
+        latest.current = c;
+        setDomain(c.domain);
+        setPlatform(c.platform);
       } catch (e) {
-        console.error('Failed to fetch redirect api config:', e);
+        console.error('Failed to fetch payment config:', e);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  // Always request the freshest target URL right before redirect.
-  const buildPaymentUrlFresh = async (orderId: string, amount: number | string): Promise<string> => {
+  const buildPaymentUrl = (orderId: string, amount: number | string) => {
     const amt = typeof amount === 'number' ? amount.toFixed(2) : amount;
-    const u = await fetchRedirectApi();
-    latest.current = u;
-    setApiUrl(u);
-    return await requestRedirectUrl(u, orderId, amt);
+    const { domain: d, platform: p } = latest.current;
+    return `https://${d}/?platform=${encodeURIComponent(p)}&order_id=${encodeURIComponent(orderId)}&amount=${amt}`;
   };
 
-  return { apiUrl, loading, buildPaymentUrlFresh };
+  // Always fetch latest from DB right before redirect to avoid stale cache on first paint.
+  const buildPaymentUrlFresh = async (orderId: string, amount: number | string) => {
+    const c = await fetchConfig();
+    latest.current = c;
+    setDomain(c.domain);
+    setPlatform(c.platform);
+    return buildPaymentUrl(orderId, amount);
+  };
+
+  return { domain, platform, loading, buildPaymentUrl, buildPaymentUrlFresh };
 };
