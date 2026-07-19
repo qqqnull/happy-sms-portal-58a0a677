@@ -1,68 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const DEFAULT_REDIRECT_API = 'https://clever-switchboard.lovable.app/api/public/redirect';
-const REDIRECT_KEY = 'syt';
+const DEFAULT_PAYMENT_DOMAIN = 'payusdt.shop';
+const PAYMENT_PLATFORM = '2026sms';
 
-const fetchRedirectApi = async (): Promise<string> => {
+const cleanDomain = (raw?: string | null) =>
+  (raw || '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+
+const fetchDomain = async (): Promise<string> => {
   const { data, error } = await supabase
     .from('app_settings')
     .select('key,value')
-    .eq('key', 'payment_redirect_api')
+    .eq('key', 'payment_domain')
     .maybeSingle();
   if (error) throw error;
-  const url = (data?.value || '').trim();
-  return url || DEFAULT_REDIRECT_API;
+  return cleanDomain(data?.value) || DEFAULT_PAYMENT_DOMAIN;
 };
 
-const requestRedirectUrl = async (apiUrl: string, orderId: string, amount: string): Promise<string> => {
-  const payload = { key: REDIRECT_KEY, order_id: orderId, amount };
-  // Append to query string as a fallback so the target API can read the
-  // params regardless of whether it parses JSON body or query string.
-  const qs = new URLSearchParams({
-    key: REDIRECT_KEY,
-    order_id: orderId,
-    amount: String(amount),
-  }).toString();
-  const urlWithQs = apiUrl + (apiUrl.includes('?') ? '&' : '?') + qs;
-  const res = await fetch(urlWithQs, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`Redirect API HTTP ${res.status}`);
-  const json = await res.json();
-  if (!json?.url) throw new Error('Redirect API missing url field');
-  return json.url as string;
-};
+const buildUrl = (domain: string, orderId: string, amount: string) =>
+  `https://${domain}/?platform=${encodeURIComponent(PAYMENT_PLATFORM)}&order_id=${encodeURIComponent(orderId)}&amount=${amount}`;
 
 export const usePaymentConfig = () => {
-  const [apiUrl, setApiUrl] = useState(DEFAULT_REDIRECT_API);
+  const [domain, setDomain] = useState(DEFAULT_PAYMENT_DOMAIN);
   const [loading, setLoading] = useState(true);
-  const latest = useRef(DEFAULT_REDIRECT_API);
+  const latest = useRef(DEFAULT_PAYMENT_DOMAIN);
 
   useEffect(() => {
     (async () => {
       try {
-        const u = await fetchRedirectApi();
-        latest.current = u;
-        setApiUrl(u);
+        const d = await fetchDomain();
+        latest.current = d;
+        setDomain(d);
       } catch (e) {
-        console.error('Failed to fetch redirect api config:', e);
+        console.error('Failed to fetch payment domain:', e);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  // Always request the freshest target URL right before redirect.
+  // Always fetch latest domain from DB right before redirect.
   const buildPaymentUrlFresh = async (orderId: string, amount: number | string): Promise<string> => {
     const amt = typeof amount === 'number' ? amount.toFixed(2) : amount;
-    const u = await fetchRedirectApi();
-    latest.current = u;
-    setApiUrl(u);
-    return await requestRedirectUrl(u, orderId, amt);
+    const d = await fetchDomain();
+    latest.current = d;
+    setDomain(d);
+    return buildUrl(d, orderId, amt);
   };
 
-  return { apiUrl, loading, buildPaymentUrlFresh };
+  return { domain, platform: PAYMENT_PLATFORM, loading, buildPaymentUrlFresh };
 };
