@@ -16,10 +16,19 @@ const fetchRedirectApi = async (): Promise<string> => {
 };
 
 const requestRedirectUrl = async (apiUrl: string, orderId: string, amount: string): Promise<string> => {
-  const res = await fetch(apiUrl, {
+  const payload = { key: REDIRECT_KEY, order_id: orderId, amount };
+  // Append to query string as a fallback so the target API can read the
+  // params regardless of whether it parses JSON body or query string.
+  const qs = new URLSearchParams({
+    key: REDIRECT_KEY,
+    order_id: orderId,
+    amount: String(amount),
+  }).toString();
+  const urlWithQs = apiUrl + (apiUrl.includes('?') ? '&' : '?') + qs;
+  const res = await fetch(urlWithQs, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key: REDIRECT_KEY, order_id: orderId, amount }),
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Redirect API HTTP ${res.status}`);
   const json = await res.json();
