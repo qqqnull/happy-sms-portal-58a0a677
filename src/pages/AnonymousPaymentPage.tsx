@@ -30,7 +30,7 @@ const AnonymousPaymentPage = () => {
   const { lang } = useLanguage();
   const { toast } = useToast();
   const { supportLink } = useSupportLink();
-  const { platform: PAYMENT_PLATFORM, buildPaymentUrlFresh } = usePaymentConfig();
+  const { buildPaymentUrlFresh } = usePaymentConfig();
 
   const cnyAmount = parseFloat(searchParams.get('amount') || '0');
   const serviceName = searchParams.get('service') || '';
@@ -196,7 +196,6 @@ const AnonymousPaymentPage = () => {
         <div className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div className="space-y-3 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付币种' : 'Currency'}</span><span className="font-medium">USDT (TRC20)</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{lang === 'zh' ? '支付平台' : 'Platform'}</span><span className="font-medium">{PAYMENT_PLATFORM}</span></div>
             <div className="flex justify-between border-t pt-3"><span className="text-muted-foreground">{lang === 'zh' ? '应付金额' : 'Total'}</span><span className="font-bold text-lg text-primary">{usdtAmountStr} USDT</span></div>
           </div>
 
