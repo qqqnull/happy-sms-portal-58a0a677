@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { generatePhoneNumber } from '@/lib/phoneGenerator';
 
 interface SmsMessage {
   id: number;
@@ -88,41 +89,16 @@ const ReceiveCodePage = () => {
         return;
       }
       
-      // 没有现有锁定，获取新号码（可用号，或锁定已过期的号）
-      const nowIso = new Date().toISOString();
-      let phone: any = null;
+      // 没有现有锁定：领取空闲号 / 回收过期号 / 自动随机生成
+      const { data: claimed, error: claimError } = await supabase.rpc('claim_or_generate_number', {
+        _country_code: countryCode,
+        _generated_number: generatePhoneNumber(countryCode),
+      });
 
-      const { data: freePhone, error } = await supabase
-        .from('phone_numbers')
-        .select('*')
-        .eq('country_code', countryCode)
-        .eq('is_persistent', false)
-        .eq('is_available', true)
-        .is('locked_by', null)
-        .limit(1)
-        .maybeSingle();
+      if (claimError) throw claimError;
 
-      if (error) throw error;
-      phone = freePhone;
-
-      // 回收锁定已过期但未被释放的号码
-      if (!phone) {
-        const { data: expiredPhone, error: expiredError } = await supabase
-          .from('phone_numbers')
-          .select('*')
-          .eq('country_code', countryCode)
-          .eq('is_persistent', false)
-          .is('owner_user_id', null)
-          .not('locked_until', 'is', null)
-          .lte('locked_until', nowIso)
-          .limit(1)
-          .maybeSingle();
-
-        if (expiredError) throw expiredError;
-        phone = expiredPhone;
-      }
-      
-      if (!phone) {
+      const result = claimed as any;
+      if (!result?.success) {
         toast({
           title: lang === 'zh' ? '暂无可用号码' : 'No Available Numbers',
           description: lang === 'zh' ? '该国家暂时没有可用的手机号' : 'No phone numbers available for this country',
@@ -131,23 +107,14 @@ const ReceiveCodePage = () => {
         navigate('/');
         return;
       }
-      
-      // 锁定号码30分钟
-      const lockUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      const { error: updateError } = await supabase
-        .from('phone_numbers')
-        .update({
-          locked_by: user.id,
-          locked_until: lockUntil,
-          is_available: false,
-        })
-        .eq('id', phone.id);
-      
-      if (updateError) throw updateError;
-      
-      setPhoneNumber(phone.phone_number);
-      setPhoneNumberId(phone.id);
-      setLockTimeLeft(30 * 60);
+
+      setPhoneNumber(result.phone_number);
+      setPhoneNumberId(result.id);
+      const remaining = Math.max(
+        0,
+        Math.floor((new Date(result.locked_until).getTime() - Date.now()) / 1000)
+      );
+      setLockTimeLeft(remaining || 30 * 60);
     } catch (error) {
       console.error('Error fetching phone number:', error);
       toast({

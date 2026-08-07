@@ -68,7 +68,7 @@ function randomDigits(n: number): string {
 }
 
 // 生成手机号（基于网站JavaScript代码逻辑）
-function generatePhoneNumber(countryCode: string): string {
+export function generatePhoneNumber(countryCode: string): string {
   if (countryCode === 'CN') {
     // 中国特殊处理 - 随机选择运营商
     const allSegments = [

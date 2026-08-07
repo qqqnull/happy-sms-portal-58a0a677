@@ -465,6 +465,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_or_generate_number: {
+        Args: { _country_code: string; _generated_number?: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
