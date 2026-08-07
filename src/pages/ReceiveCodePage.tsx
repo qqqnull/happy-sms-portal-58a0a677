@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { generatePhoneNumber } from '@/lib/phoneGenerator';
 
 interface SmsMessage {
   id: number;
