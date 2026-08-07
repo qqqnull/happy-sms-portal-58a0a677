@@ -88,17 +88,39 @@ const ReceiveCodePage = () => {
         return;
       }
       
-      // 没有现有锁定，获取新号码
-      const { data: phone, error } = await supabase
+      // 没有现有锁定，获取新号码（可用号，或锁定已过期的号）
+      const nowIso = new Date().toISOString();
+      let phone: any = null;
+
+      const { data: freePhone, error } = await supabase
         .from('phone_numbers')
         .select('*')
         .eq('country_code', countryCode)
+        .eq('is_persistent', false)
         .eq('is_available', true)
         .is('locked_by', null)
         .limit(1)
         .maybeSingle();
-      
+
       if (error) throw error;
+      phone = freePhone;
+
+      // 回收锁定已过期但未被释放的号码
+      if (!phone) {
+        const { data: expiredPhone, error: expiredError } = await supabase
+          .from('phone_numbers')
+          .select('*')
+          .eq('country_code', countryCode)
+          .eq('is_persistent', false)
+          .is('owner_user_id', null)
+          .not('locked_until', 'is', null)
+          .lte('locked_until', nowIso)
+          .limit(1)
+          .maybeSingle();
+
+        if (expiredError) throw expiredError;
+        phone = expiredPhone;
+      }
       
       if (!phone) {
         toast({
