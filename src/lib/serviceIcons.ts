@@ -47,6 +47,7 @@ export const getServiceIcon = (iconName: string | null): string => {
     bilibili: '📺',
     chatgpt: '🤖',
     claude: '🧠',
+    chaopiao: '🎫',
   };
 
   return iconMap[iconName || ''] || '📱';
